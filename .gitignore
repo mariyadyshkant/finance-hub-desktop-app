@@ -1,4 +1,6 @@
-BRIEF.md
+ADR.md
+AGENT.md
+NOTES_agent.md
 
 # secrets / local config — mai committare
 .env

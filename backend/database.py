@@ -8,21 +8,16 @@ DB_PATH = Path(__file__).parent / "finance.db"
 TURSO_URL = os.getenv("TURSO_DATABASE_URL")
 TURSO_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
 
-if TURSO_URL:
-    import libsql_experimental as libsql
-
 
 def get_conn():
     if TURSO_URL:
-        return libsql.connect(TURSO_URL, auth_token=TURSO_TOKEN)
+        from turso_client import TursoConnection
+        return TursoConnection(TURSO_URL, TURSO_TOKEN)
     return sqlite3.connect(DB_PATH, check_same_thread=False)
 
 
 def _close(conn):
-    # libsql_experimental non espone .close() in tutte le versioni: ignora se assente.
-    close = getattr(conn, "close", None)
-    if close:
-        close()
+    conn.close()
 
 
 def _rows_to_dicts(cursor, rows):

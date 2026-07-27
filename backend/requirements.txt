@@ -5,9 +5,3 @@ pandas>=2.2
 python-multipart>=0.0.12
 requests>=2.32
 python-dotenv>=1.0
-
-# Turso (SQLite cloud) — richiesta solo se TURSO_DATABASE_URL è impostata in .env.
-# È una libreria "experimental" senza wheel precompilate: la build da sorgente
-# richiede un toolchain Rust funzionante. Se `pip install -r requirements.txt`
-# fallisce solo su questa riga, verifica prima che `cargo --version` funzioni.
-libsql-experimental>=0.0.55

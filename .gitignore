@@ -7,8 +7,10 @@ NOTES_agent.md
 .env.*
 !.env.example
 config.local.json
-backend/*.db
-backend/*.db-journal
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
 # node
 node_modules/

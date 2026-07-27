@@ -1,9 +1,12 @@
 const { app, BrowserWindow } = require("electron");
 const { spawn } = require("child_process");
+const http = require("http");
 const path = require("path");
 
 const BACKEND_PORT = 8000;
 const BACKEND_URL = `http://127.0.0.1:${BACKEND_PORT}`;
+const BACKEND_READY_TIMEOUT_MS = 20_000;
+const BACKEND_POLL_INTERVAL_MS = 250;
 
 let backendProcess;
 let mainWindow;
@@ -17,6 +20,39 @@ function startBackend() {
   );
   backendProcess.on("error", (err) => {
     console.error("Impossibile avviare il backend FastAPI:", err);
+  });
+}
+
+// Il frontend prova a chiamare l'API non appena la finestra si carica: se il
+// backend Python non è ancora su, la prima richiesta fallisce con un errore
+// permanente (i componenti Svelte non ritentano da soli). Aspettiamo qui
+// finché /health non risponde, così la finestra si apre solo quando l'API è
+// davvero pronta.
+function waitForBackend(timeoutMs = BACKEND_READY_TIMEOUT_MS) {
+  const deadline = Date.now() + timeoutMs;
+
+  return new Promise((resolve, reject) => {
+    function attempt() {
+      const req = http.get(`${BACKEND_URL}/health`, (res) => {
+        res.resume();
+        if (res.statusCode === 200) {
+          resolve();
+        } else {
+          retry();
+        }
+      });
+      req.on("error", retry);
+    }
+
+    function retry() {
+      if (Date.now() > deadline) {
+        reject(new Error("Timeout in attesa del backend FastAPI su " + BACKEND_URL));
+        return;
+      }
+      setTimeout(attempt, BACKEND_POLL_INTERVAL_MS);
+    }
+
+    attempt();
   });
 }
 
@@ -42,8 +78,17 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   startBackend();
+
+  try {
+    await waitForBackend();
+  } catch (err) {
+    console.error(err.message);
+    // Meglio aprire comunque la finestra (mostrerà gli errori di rete nella UI)
+    // che lasciare l'utente davanti a un'app che sembra non avviarsi mai.
+  }
+
   createWindow();
 
   app.on("activate", () => {

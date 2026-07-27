@@ -36,6 +36,11 @@ def on_startup():
     init_planned_expenses()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.get("/api/categories")
 def get_categories():
     return {"categories": CATEGORIES, "colors": CAT_COLORS}

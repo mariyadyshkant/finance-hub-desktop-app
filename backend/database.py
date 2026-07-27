@@ -1,20 +1,47 @@
-import sqlite3
 import json
-from datetime import date, datetime
+import os
+import sqlite3
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent / "finance.db"
 
+TURSO_URL = os.getenv("TURSO_DATABASE_URL")
+TURSO_TOKEN = os.getenv("TURSO_AUTH_TOKEN")
+
+if TURSO_URL:
+    import libsql_experimental as libsql
+
+
 def get_conn():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if TURSO_URL:
+        return libsql.connect(TURSO_URL, auth_token=TURSO_TOKEN)
+    return sqlite3.connect(DB_PATH, check_same_thread=False)
+
+
+def _close(conn):
+    # libsql_experimental non espone .close() in tutte le versioni: ignora se assente.
+    close = getattr(conn, "close", None)
+    if close:
+        close()
+
+
+def _rows_to_dicts(cursor, rows):
+    cols = [d[0] for d in cursor.description]
+    return [dict(zip(cols, row)) for row in rows]
+
+
+def _row_to_dict(cursor, row):
+    if row is None:
+        return None
+    cols = [d[0] for d in cursor.description]
+    return dict(zip(cols, row))
+
 
 def init_db():
     conn = get_conn()
-    c = conn.cursor()
 
-    c.executescript("""
+    for statement in (
+        """
         CREATE TABLE IF NOT EXISTS transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
@@ -24,8 +51,9 @@ def init_db():
             source TEXT DEFAULT 'manual',
             note TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now'))
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS reimbursements (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
@@ -36,16 +64,18 @@ def init_db():
             transaction_id INTEGER,
             note TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now'))
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS savings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
             amount REAL NOT NULL,
             label TEXT DEFAULT '',
             note TEXT DEFAULT ''
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS work_shifts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT NOT NULL,
@@ -53,8 +83,9 @@ def init_db():
             end_time TEXT,
             hours REAL NOT NULL,
             note TEXT DEFAULT ''
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS salary_records (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             month TEXT NOT NULL,
@@ -62,30 +93,35 @@ def init_db():
             net REAL,
             hours_worked REAL,
             note TEXT DEFAULT ''
-        );
-
+        )
+        """,
+        """
         CREATE TABLE IF NOT EXISTS budgets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category TEXT NOT NULL UNIQUE,
             monthly_limit REAL NOT NULL
-        );
-    """)
+        )
+        """,
+    ):
+        conn.execute(statement)
+
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Transactions ────────────────────────────────────────────────────────────
 
 def get_transactions(month=None):
     conn = get_conn()
     if month:
-        rows = conn.execute(
+        cur = conn.execute(
             "SELECT * FROM transactions WHERE strftime('%Y-%m', date) = ? ORDER BY date DESC",
             (month,)
-        ).fetchall()
+        )
     else:
-        rows = conn.execute("SELECT * FROM transactions ORDER BY date DESC").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+        cur = conn.execute("SELECT * FROM transactions ORDER BY date DESC")
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return rows
 
 def add_transaction(date, description, amount, category, source="manual", note=""):
     conn = get_conn()
@@ -94,7 +130,7 @@ def add_transaction(date, description, amount, category, source="manual", note="
         (date, description, amount, category, source, note)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def update_transaction(tx_id, **kwargs):
     conn = get_conn()
@@ -102,32 +138,36 @@ def update_transaction(tx_id, **kwargs):
     values = list(kwargs.values()) + [tx_id]
     conn.execute(f"UPDATE transactions SET {fields} WHERE id=?", values)
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def delete_transaction(tx_id):
     conn = get_conn()
     conn.execute("DELETE FROM transactions WHERE id=?", (tx_id,))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def import_transactions_bulk(records):
     """records: list of dicts with keys date, description, amount, category, source"""
     conn = get_conn()
+    tuples = [
+        (r["date"], r["description"], r["amount"], r["category"], r.get("source", "manual"))
+        for r in records
+    ]
     conn.executemany(
-        "INSERT INTO transactions (date, description, amount, category, source) VALUES (:date, :description, :amount, :category, :source)",
-        records
+        "INSERT INTO transactions (date, description, amount, category, source) VALUES (?,?,?,?,?)",
+        tuples
     )
     conn.commit()
-    inserted = conn.total_changes
-    conn.close()
-    return inserted
+    _close(conn)
+    return len(records)
 
 def get_available_months():
     conn = get_conn()
-    rows = conn.execute(
+    cur = conn.execute(
         "SELECT DISTINCT strftime('%Y-%m', date) as m FROM transactions ORDER BY m DESC"
-    ).fetchall()
-    conn.close()
+    )
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
     return [r["m"] for r in rows]
 
 # ─── Reimbursements ──────────────────────────────────────────────────────────
@@ -135,13 +175,14 @@ def get_available_months():
 def get_reimbursements(status=None):
     conn = get_conn()
     if status:
-        rows = conn.execute(
+        cur = conn.execute(
             "SELECT * FROM reimbursements WHERE status=? ORDER BY date DESC", (status,)
-        ).fetchall()
+        )
     else:
-        rows = conn.execute("SELECT * FROM reimbursements ORDER BY date DESC").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+        cur = conn.execute("SELECT * FROM reimbursements ORDER BY date DESC")
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return rows
 
 def add_reimbursement(date, description, amount, from_person, note="", transaction_id=None):
     conn = get_conn()
@@ -150,7 +191,7 @@ def add_reimbursement(date, description, amount, from_person, note="", transacti
         (date, description, amount, from_person, note, transaction_id)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def update_reimbursement(r_id, **kwargs):
     conn = get_conn()
@@ -158,21 +199,22 @@ def update_reimbursement(r_id, **kwargs):
     values = list(kwargs.values()) + [r_id]
     conn.execute(f"UPDATE reimbursements SET {fields} WHERE id=?", values)
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def delete_reimbursement(r_id):
     conn = get_conn()
     conn.execute("DELETE FROM reimbursements WHERE id=?", (r_id,))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Savings ─────────────────────────────────────────────────────────────────
 
 def get_savings():
     conn = get_conn()
-    rows = conn.execute("SELECT * FROM savings ORDER BY date DESC").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    cur = conn.execute("SELECT * FROM savings ORDER BY date DESC")
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return rows
 
 def add_savings_entry(date, amount, label="", note=""):
     conn = get_conn()
@@ -181,27 +223,28 @@ def add_savings_entry(date, amount, label="", note=""):
         (date, amount, label, note)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def delete_savings_entry(s_id):
     conn = get_conn()
     conn.execute("DELETE FROM savings WHERE id=?", (s_id,))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Work shifts ─────────────────────────────────────────────────────────────
 
 def get_shifts(month=None):
     conn = get_conn()
     if month:
-        rows = conn.execute(
+        cur = conn.execute(
             "SELECT * FROM work_shifts WHERE strftime('%Y-%m', date) = ? ORDER BY date",
             (month,)
-        ).fetchall()
+        )
     else:
-        rows = conn.execute("SELECT * FROM work_shifts ORDER BY date DESC").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+        cur = conn.execute("SELECT * FROM work_shifts ORDER BY date DESC")
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return rows
 
 def add_shift(date, hours, start_time="", end_time="", note=""):
     conn = get_conn()
@@ -210,30 +253,35 @@ def add_shift(date, hours, start_time="", end_time="", note=""):
         (date, hours, start_time, end_time, note)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def delete_shift(shift_id):
     conn = get_conn()
     conn.execute("DELETE FROM work_shifts WHERE id=?", (shift_id,))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def add_shifts_bulk(shifts):
     conn = get_conn()
+    tuples = [
+        (s["date"], s["hours"], s.get("start_time", ""), s.get("end_time", ""), s.get("note", ""))
+        for s in shifts
+    ]
     conn.executemany(
-        "INSERT INTO work_shifts (date, hours, start_time, end_time, note) VALUES (:date, :hours, :start_time, :end_time, :note)",
-        shifts
+        "INSERT INTO work_shifts (date, hours, start_time, end_time, note) VALUES (?,?,?,?,?)",
+        tuples
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Salary ──────────────────────────────────────────────────────────────────
 
 def get_salary_records():
     conn = get_conn()
-    rows = conn.execute("SELECT * FROM salary_records ORDER BY month DESC").fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    cur = conn.execute("SELECT * FROM salary_records ORDER BY month DESC")
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return rows
 
 def add_salary_record(month, net, gross=None, hours_worked=None, note=""):
     conn = get_conn()
@@ -242,20 +290,21 @@ def add_salary_record(month, net, gross=None, hours_worked=None, note=""):
         (month, net, gross, hours_worked, note)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def delete_salary_record(s_id):
     conn = get_conn()
     conn.execute("DELETE FROM salary_records WHERE id=?", (s_id,))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Budgets ─────────────────────────────────────────────────────────────────
 
 def get_budgets():
     conn = get_conn()
-    rows = conn.execute("SELECT * FROM budgets").fetchall()
-    conn.close()
+    cur = conn.execute("SELECT * FROM budgets")
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
     return {r["category"]: r["monthly_limit"] for r in rows}
 
 def set_budget(category, limit):
@@ -265,7 +314,7 @@ def set_budget(category, limit):
         (category, limit)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Monthly summaries (Notion import) ───────────────────────────────────────
 
@@ -282,7 +331,7 @@ def init_monthly_summaries():
         )
     """)
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def upsert_monthly_summary(month, category, amount, source="notion"):
     conn = get_conn()
@@ -291,34 +340,36 @@ def upsert_monthly_summary(month, category, amount, source="notion"):
         (month, category, amount, source)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def get_monthly_summaries(month=None):
     conn = get_conn()
     if month:
-        rows = conn.execute(
+        cur = conn.execute(
             "SELECT * FROM monthly_summaries WHERE month=? ORDER BY amount DESC", (month,)
-        ).fetchall()
+        )
     else:
-        rows = conn.execute(
+        cur = conn.execute(
             "SELECT * FROM monthly_summaries ORDER BY month DESC, amount DESC"
-        ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+        )
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return rows
 
 def get_summary_months():
     conn = get_conn()
-    rows = conn.execute(
+    cur = conn.execute(
         "SELECT DISTINCT month FROM monthly_summaries ORDER BY month DESC"
-    ).fetchall()
-    conn.close()
+    )
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
     return [r["month"] for r in rows]
 
 def delete_monthly_summary_month(month):
     conn = get_conn()
     conn.execute("DELETE FROM monthly_summaries WHERE month=?", (month,))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Budget ───────────────────────────────────────────────────────────────────
 
@@ -333,11 +384,12 @@ def get_monthly_budget(month):
         )
     """)
     conn.commit()
-    row = conn.execute(
+    cur = conn.execute(
         "SELECT * FROM monthly_budgets WHERE month=?", (month,)
-    ).fetchone()
-    conn.close()
-    return dict(row) if row else None
+    )
+    row = _row_to_dict(cur, cur.fetchone())
+    _close(conn)
+    return row
 
 def upsert_monthly_budget(month, total, cat_budgets: dict, note=""):
     conn = get_conn()
@@ -349,13 +401,12 @@ def upsert_monthly_budget(month, total, cat_budgets: dict, note=""):
             note TEXT DEFAULT ''
         )
     """)
-    import json
     conn.execute(
         "INSERT OR REPLACE INTO monthly_budgets (month, total, cat_budgets, note) VALUES (?,?,?,?)",
         (month, total, json.dumps(cat_budgets), note)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 # ─── Planned expenses ────────────────────────────────────────────────────────
 
@@ -385,15 +436,16 @@ def init_planned_expenses():
         )
     """)
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def get_planned_expenses():
     conn = get_conn()
-    rows = conn.execute(
+    cur = conn.execute(
         "SELECT * FROM planned_expenses WHERE active=1 ORDER BY amount DESC"
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+    )
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return rows
 
 def add_planned_expense(description, amount, category, is_recurring=1):
     conn = get_conn()
@@ -402,28 +454,29 @@ def add_planned_expense(description, amount, category, is_recurring=1):
         (description, amount, category, is_recurring)
     )
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def update_planned_expense(pid, **kwargs):
     conn = get_conn()
     fields = ", ".join(f"{k}=?" for k in kwargs)
     conn.execute(f"UPDATE planned_expenses SET {fields} WHERE id=?", list(kwargs.values())+[pid])
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def delete_planned_expense(pid):
     conn = get_conn()
     conn.execute("UPDATE planned_expenses SET active=0 WHERE id=?", (pid,))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def get_overrides(month):
     conn = get_conn()
-    rows = conn.execute(
+    cur = conn.execute(
         "SELECT * FROM planned_expense_overrides WHERE month=?", (month,)
-    ).fetchall()
-    conn.close()
-    return {r["planned_id"]: dict(r) for r in rows}
+    )
+    rows = _rows_to_dicts(cur, cur.fetchall())
+    _close(conn)
+    return {r["planned_id"]: r for r in rows}
 
 def upsert_override(month, planned_id, amount, is_exceptional=0, note=""):
     conn = get_conn()
@@ -433,7 +486,7 @@ def upsert_override(month, planned_id, amount, is_exceptional=0, note=""):
         VALUES (?,?,?,?,?)
     """, (month, planned_id, amount, is_exceptional, note))
     conn.commit()
-    conn.close()
+    _close(conn)
 
 def delete_override(month, planned_id):
     conn = get_conn()
@@ -442,4 +495,4 @@ def delete_override(month, planned_id):
         (month, planned_id)
     )
     conn.commit()
-    conn.close()
+    _close(conn)

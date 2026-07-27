@@ -1,0 +1,29 @@
+BRIEF.md
+
+# secrets / local config — mai committare
+.env
+.env.*
+!.env.example
+config.local.json
+backend/*.db
+backend/*.db-journal
+
+# node
+node_modules/
+frontend/dist/
+frontend/.svelte-kit/
+npm-debug.log*
+
+# python
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+backend/.venv/
+backend/venv/
+
+# electron build output
+dist/
+release/
+
+# os
+.DS_Store

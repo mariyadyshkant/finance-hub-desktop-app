@@ -22,15 +22,17 @@ Sostituire SQLite locale con Turso (SQLite cloud) come storage condiviso tra app
 
 ## Status
 
-[~] In corso
+[x] Completata
 
-**Fatto (branch `feature/turso-migration`, commit `11c4b5a`):**
-- Migrazione di `database.py` (executescript → CREATE TABLE singole, executemany posizionale invece di parametri nominati, wrapper `_close`/`_rows_to_dicts` per compatibilità tra i due driver).
-- `requirements.txt` e `.env.example` aggiornati.
-- `check_db.py` aggiunto e verificato in locale (fallback SQLite).
+**Completata il:** 2026-07-28
 
-**Bloccato su azione utente:**
-- Creazione del database Turso reale (`turso auth login` + `turso db create`) — richiede l'account dell'utente, non eseguibile da un agente non interattivo.
-- Verifica che `pip install libsql-experimental` builda correttamente sulla macchina reale dell'utente (nel sandbox di sviluppo la build da sorgente è fallita per assenza di un toolchain Rust funzionante — vedi nota in `requirements.txt`).
+**Cosa è stato fatto:**
+- Migrazione di `database.py` per supportare Turso oltre a SQLite locale (invariato di default).
+- Tentativo iniziale con `libsql_experimental` (driver nativo) — bloccato: build Rust fallisce su macOS senza GNU coreutils (`build.rs` di `libsql-ffi` usa `cp` in stile GNU).
+- Deviazione dal piano originale: sostituito con `backend/turso_client.py`, client scritto in-house sull'API HTTP di Turso (Hrana su `/v2/pipeline`, via `requests`), stessa interfaccia sqlite3-like usata dal resto di `database.py`. Zero dipendenze nuove.
+- `backend/check_db.py` per smoke test rapido.
+- Verificato con round-trip completo (insert, update, bulk insert, query per mese, delete) contro il database Turso reale dell'utente — nessun dato di test residuo.
+- `.gitignore` esteso per coprire `*.db`/`*.db-wal`/`*.db-shm` a qualunque livello.
+- `ADR.md` annotato con la deviazione (sezione "Turso — database cloud").
 
-**Prossimo passo:** utente fornisce URL/token Turso in `backend/.env`, esegue `pip install -r requirements.txt` e `python3 check_db.py`; poi si conferma il merge in `dev`.
+**Note:** la parte di setup account (`turso auth login`, `turso db create`, URL/token) è stata fatta dall'utente, non automatizzabile da un agente non interattivo.

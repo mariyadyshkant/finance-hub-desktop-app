@@ -36,3 +36,5 @@ Sostituire SQLite locale con Turso (SQLite cloud) come storage condiviso tra app
 - `ADR.md` annotato con la deviazione (sezione "Turso — database cloud").
 
 **Note:** la parte di setup account (`turso auth login`, `turso db create`, URL/token) è stata fatta dall'utente, non automatizzabile da un agente non interattivo.
+
+**Fix successivo (stesso branch):** al primo test reale con `npm run dev` è emersa una race condition non legata a Turso — Electron apriva la finestra prima che il backend FastAPI finisse di avviarsi, causando un errore transitorio "Backend non raggiungibile". Aggiunto `GET /health` e polling in `electron/main.js` prima di creare la finestra. Confermato dall'utente (2026-07-28): "adesso funziona".

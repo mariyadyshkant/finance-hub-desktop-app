@@ -17,7 +17,7 @@ from routes import (
     planning,
 )
 
-app = FastAPI(title="Finance Hub API")
+app = FastAPI(title="FinanceD API")
 
 # App desktop locale: nessun rischio ad aprire il CORS, il backend
 # ascolta solo su 127.0.0.1 e il renderer Electron gira su file:// (origin "null").

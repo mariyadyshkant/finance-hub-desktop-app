@@ -1,11 +1,14 @@
 <script>
   import Icon from "./Icon.svelte";
+  import logo from "../assets/logo.png";
 
   let { routes, current, onNavigate } = $props();
 </script>
 
 <nav class="sidebar">
-  <div class="brand">Finance Hub</div>
+  <div class="brand">
+    <img src={logo} alt="FinanceD" />
+  </div>
 
   <ul>
     {#each routes as route}
@@ -44,12 +47,13 @@
   }
 
   .brand {
-    font-family: var(--font-heading);
-    font-weight: 1000;
-    font-size: var(--text-2xl);
-    letter-spacing: -0.025em;
-    color: var(--text-primary);
-    padding: var(--space-6) var(--space-5) var(--space-5);
+    padding: var(--space-3) var(--space-2) var(--space-2);
+  }
+
+  .brand img {
+    display: block;
+    height: 70px;
+    width: auto;
   }
 
   ul {

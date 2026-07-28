@@ -1,7 +1,7 @@
 {
   "name": "finance-hub-desktop",
   "version": "0.1.0",
-  "description": "Finance Hub — app desktop nativa (Electron + Svelte + FastAPI)",
+  "description": "FinanceD — app desktop nativa (Electron + Svelte + FastAPI)",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
@@ -20,7 +20,7 @@
   },
   "build": {
     "appId": "com.mariyadyshkant.financehub",
-    "productName": "Finance Hub",
+    "productName": "FinanceD",
     "files": [
       "electron/**/*",
       "frontend/dist/**/*",

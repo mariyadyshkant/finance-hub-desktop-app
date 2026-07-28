@@ -10,7 +10,7 @@
 </script>
 
 <section>
-  <h2>🔄 Rimborsi</h2>
+  <h2>Rimborsi</h2>
   {#if error}
     <p class="error">Backend non raggiungibile: {error}</p>
   {:else if reimbursements.length === 0}
@@ -25,5 +25,5 @@
 </section>
 
 <style>
-  .error { color: #d85a30; }
+  .error { color: var(--danger); }
 </style>

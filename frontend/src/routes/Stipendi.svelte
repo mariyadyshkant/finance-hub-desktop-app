@@ -10,7 +10,7 @@
 </script>
 
 <section>
-  <h2>📅 Stipendi & Ore lavorate</h2>
+  <h2>Stipendi & Ore lavorate</h2>
   {#if error}
     <p class="error">Backend non raggiungibile: {error}</p>
   {:else if salaryRecords.length === 0}
@@ -25,5 +25,5 @@
 </section>
 
 <style>
-  .error { color: #d85a30; }
+  .error { color: var(--danger); }
 </style>

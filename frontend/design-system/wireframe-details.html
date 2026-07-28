@@ -1,0 +1,1584 @@
+<div class="export-wrapper" style="
+    width: 1440px;
+    min-height: 812px;
+    position: relative;
+    font-family: var(--font-family-body);
+    background-color: var(--background);
+  ">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@100;200;300;400;500;600;700;800;900&family=Geist:wght@100;200;300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@100;200;300;400;500;600;700&family=IBM+Plex+Sans:wght@100;200;300;400;500;600;700&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Nunito:wght@200;300;400;500;600;700;800;900&family=PT+Serif:wght@400;700&family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&family=Shantell+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <html>
+
+    <head>
+        <style>
+            /*! tailwindcss v4.3.0 | MIT License | https://tailwindcss.com */
+            @layer properties;
+            @layer theme, base, components, utilities;
+
+            @layer theme {
+
+                :root,
+                :root {
+                    --font-sans:
+                        ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+                        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+                    --font-mono:
+                        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                        "Liberation Mono", "Courier New", monospace;
+                    --color-orange-100: oklch(95.4% 0.038 75.164);
+                    --color-orange-700: oklch(55.3% 0.195 38.402);
+                    --color-green-100: oklch(96.2% 0.044 156.743);
+                    --color-green-700: oklch(52.7% 0.154 150.069);
+                    --color-emerald-100: oklch(95% 0.052 163.051);
+                    --color-emerald-700: oklch(50.8% 0.118 165.612);
+                    --color-blue-100: oklch(93.2% 0.032 255.585);
+                    --color-blue-700: oklch(48.8% 0.243 264.376);
+                    --color-purple-100: oklch(94.6% 0.033 307.174);
+                    --color-purple-700: oklch(49.6% 0.265 301.924);
+                    --color-pink-100: oklch(94.8% 0.028 342.258);
+                    --color-pink-700: oklch(52.5% 0.223 3.958);
+                    --color-slate-100: oklch(96.8% 0.007 247.896);
+                    --color-slate-700: oklch(37.2% 0.044 257.287);
+                    --spacing: 0.25rem;
+                    --text-xs: 11px;
+                    --text-xs--line-height: calc(1 / 0.75);
+                    --text-sm: 13px;
+                    --text-sm--line-height: calc(1.25 / 0.875);
+                    --text-base: 14px;
+                    --text-base--line-height: calc(1.5 / 1);
+                    --text-xl: 20px;
+                    --text-xl--line-height: calc(1.75 / 1.25);
+                    --text-3xl: 30px;
+                    --text-3xl--line-height: calc(2.25 / 1.875);
+                    --font-weight-medium: 500;
+                    --font-weight-bold: 700;
+                    --tracking-tight: -0.025em;
+                    --tracking-wider: 0.05em;
+                    --tracking-widest: 0.1em;
+                    --radius-sm: 4px;
+                    --radius-md: 8px;
+                    --radius-lg: 12px;
+                    --default-font-family: var(--font-sans);
+                    --default-mono-font-family: var(--font-mono);
+                    --radius: var(--radius-sm);
+                    --color-background: #f8f9fa;
+                    --color-foreground: #271d6b;
+                    --color-border: #5b95e09b;
+                    --color-input: #f6f8fb;
+                    --color-primary: #6966a0;
+                    --color-primary-foreground: #ffffff;
+                    --color-secondary: #e0e7ff;
+                    --color-secondary-foreground: #4f46e5;
+                    --color-muted: #f5f7fa;
+                    --color-muted-foreground: #2e4a83;
+                    --color-surface: #ffffff;
+                    --color-danger: #ef4444;
+                    --font-body: Geist, sans-serif;
+                    --font-headings: Inter, sans-serif;
+                }
+            }
+
+            @layer base {
+
+                *,
+                ::after,
+                ::before,
+                ::backdrop,
+                ::file-selector-button {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                    border: 0 solid;
+                }
+
+                html,
+                :root {
+                    line-height: 1.5;
+                    -webkit-text-size-adjust: 100%;
+                    tab-size: 4;
+                    font-family: var(--default-font-family,
+                            ui-sans-serif,
+                            system-ui,
+                            sans-serif,
+                            "Apple Color Emoji",
+                            "Segoe UI Emoji",
+                            "Segoe UI Symbol",
+                            "Noto Color Emoji"
+                        );
+                    font-feature-settings: var(--default-font-feature-settings, normal);
+                    font-variation-settings: var(--default-font-variation-settings,
+                            normal);
+                    -webkit-tap-highlight-color: transparent;
+                }
+
+                hr {
+                    height: 0;
+                    color: inherit;
+                    border-top-width: 1px;
+                }
+
+                abbr:where([title]) {
+                    -webkit-text-decoration: underline dotted;
+                    text-decoration: underline dotted;
+                }
+
+                h1,
+                h2,
+                h3,
+                h4,
+                h5,
+                h6 {
+                    font-size: inherit;
+                    font-weight: inherit;
+                }
+
+                a {
+                    color: inherit;
+                    -webkit-text-decoration: inherit;
+                    text-decoration: inherit;
+                }
+
+                b,
+                strong {
+                    font-weight: bolder;
+                }
+
+                code,
+                kbd,
+                samp,
+                pre {
+                    font-family: var(--default-mono-font-family,
+                            ui-monospace,
+                            SFMono-Regular,
+                            Menlo,
+                            Monaco,
+                            Consolas,
+                            "Liberation Mono",
+                            "Courier New",
+                            monospace);
+                    font-feature-settings: var(--default-mono-font-feature-settings,
+                            normal);
+                    font-variation-settings: var(--default-mono-font-variation-settings,
+                            normal);
+                    font-size: 1em;
+                }
+
+                small {
+                    font-size: 80%;
+                }
+
+                sub,
+                sup {
+                    font-size: 75%;
+                    line-height: 0;
+                    position: relative;
+                    vertical-align: baseline;
+                }
+
+                sub {
+                    bottom: -0.25em;
+                }
+
+                sup {
+                    top: -0.5em;
+                }
+
+                table {
+                    text-indent: 0;
+                    border-color: inherit;
+                    border-collapse: collapse;
+                }
+
+                :-moz-focusring {
+                    outline: auto;
+                }
+
+                progress {
+                    vertical-align: baseline;
+                }
+
+                summary {
+                    display: list-item;
+                }
+
+                ol,
+                ul,
+                menu {
+                    list-style: none;
+                }
+
+                img,
+                svg,
+                video,
+                canvas,
+                audio,
+                iframe,
+                embed,
+                object {
+                    display: block;
+                    vertical-align: middle;
+                }
+
+                img,
+                video {
+                    max-width: 100%;
+                    height: auto;
+                }
+
+                button,
+                input,
+                select,
+                optgroup,
+                textarea,
+                ::file-selector-button {
+                    font: inherit;
+                    font-feature-settings: inherit;
+                    font-variation-settings: inherit;
+                    letter-spacing: inherit;
+                    color: inherit;
+                    border-radius: 0;
+                    background-color: transparent;
+                    opacity: 1;
+                }
+
+                :where(select:is([multiple], [size])) optgroup {
+                    font-weight: bolder;
+                }
+
+                :where(select:is([multiple], [size])) optgroup option {
+                    padding-inline-start: 20px;
+                }
+
+                ::file-selector-button {
+                    margin-inline-end: 4px;
+                }
+
+                ::placeholder {
+                    opacity: 1;
+                }
+
+                @supports (not (-webkit-appearance: -apple-pay-button)) or (contain-intrinsic-size: 1px) {
+                    ::placeholder {
+                        color: currentcolor;
+
+                        @supports (color: color-mix(in lab, red, red)) {
+                            color: color-mix(in oklab, currentcolor 50%, transparent);
+                        }
+                    }
+                }
+
+                textarea {
+                    resize: vertical;
+                }
+
+                ::-webkit-search-decoration {
+                    -webkit-appearance: none;
+                }
+
+                ::-webkit-date-and-time-value {
+                    min-height: 1lh;
+                    text-align: inherit;
+                }
+
+                ::-webkit-datetime-edit {
+                    display: inline-flex;
+                }
+
+                ::-webkit-datetime-edit-fields-wrapper {
+                    padding: 0;
+                }
+
+                ::-webkit-datetime-edit,
+                ::-webkit-datetime-edit-year-field,
+                ::-webkit-datetime-edit-month-field,
+                ::-webkit-datetime-edit-day-field,
+                ::-webkit-datetime-edit-hour-field,
+                ::-webkit-datetime-edit-minute-field,
+                ::-webkit-datetime-edit-second-field,
+                ::-webkit-datetime-edit-millisecond-field,
+                ::-webkit-datetime-edit-meridiem-field {
+                    padding-block: 0;
+                }
+
+                ::-webkit-calendar-picker-indicator {
+                    line-height: 1;
+                }
+
+                :-moz-ui-invalid {
+                    box-shadow: none;
+                }
+
+                button,
+                input:where([type="button"], [type="reset"], [type="submit"]),
+                ::file-selector-button {
+                    appearance: button;
+                }
+
+                ::-webkit-inner-spin-button,
+                ::-webkit-outer-spin-button {
+                    height: auto;
+                }
+
+                [hidden]:where(:not([hidden="until-found"])) {
+                    display: none !important;
+                }
+            }
+
+            @layer utilities {
+                .mt-1 {
+                    margin-top: calc(var(--spacing) * 1);
+                }
+
+                .mt-4 {
+                    margin-top: calc(var(--spacing) * 4);
+                }
+
+                .mt-5 {
+                    margin-top: calc(var(--spacing) * 5);
+                }
+
+                .mt-6 {
+                    margin-top: calc(var(--spacing) * 6);
+                }
+
+                .mr-4 {
+                    margin-right: calc(var(--spacing) * 4);
+                }
+
+                .mb-5 {
+                    margin-bottom: calc(var(--spacing) * 5);
+                }
+
+                .mb-6 {
+                    margin-bottom: calc(var(--spacing) * 6);
+                }
+
+                .mb-8 {
+                    margin-bottom: calc(var(--spacing) * 8);
+                }
+
+                .flex {
+                    display: flex;
+                }
+
+                .grid {
+                    display: grid;
+                }
+
+                .hidden {
+                    display: none;
+                }
+
+                .h-8 {
+                    height: calc(var(--spacing) * 8);
+                }
+
+                .h-10 {
+                    height: calc(var(--spacing) * 10);
+                }
+
+                .w-8 {
+                    width: calc(var(--spacing) * 8);
+                }
+
+                .w-10 {
+                    width: calc(var(--spacing) * 10);
+                }
+
+                .w-24 {
+                    width: calc(var(--spacing) * 24);
+                }
+
+                .w-28 {
+                    width: calc(var(--spacing) * 28);
+                }
+
+                .w-40 {
+                    width: calc(var(--spacing) * 40);
+                }
+
+                .w-56 {
+                    width: calc(var(--spacing) * 56);
+                }
+
+                .min-w-0 {
+                    min-width: calc(var(--spacing) * 0);
+                }
+
+                .flex-1 {
+                    flex: 1;
+                }
+
+                .shrink-0 {
+                    flex-shrink: 0;
+                }
+
+                .grid-cols-2 {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .flex-col {
+                    flex-direction: column;
+                }
+
+                .items-center {
+                    align-items: center;
+                }
+
+                .justify-between {
+                    justify-content: space-between;
+                }
+
+                .justify-center {
+                    justify-content: center;
+                }
+
+                .gap-1 {
+                    gap: calc(var(--spacing) * 1);
+                }
+
+                .gap-2 {
+                    gap: calc(var(--spacing) * 2);
+                }
+
+                .gap-3 {
+                    gap: calc(var(--spacing) * 3);
+                }
+
+                .gap-4 {
+                    gap: calc(var(--spacing) * 4);
+                }
+
+                .gap-6 {
+                    gap: calc(var(--spacing) * 6);
+                }
+
+                .overflow-hidden {
+                    overflow: hidden;
+                }
+
+                .rounded {
+                    border-radius: var(--radius);
+                }
+
+                .rounded-full {
+                    border-radius: calc(infinity * 1px);
+                }
+
+                .rounded-lg {
+                    border-radius: var(--radius-lg);
+                }
+
+                .rounded-md {
+                    border-radius: var(--radius-md);
+                }
+
+                .border {
+                    border-style: var(--tw-border-style);
+                    border-width: 1px;
+                }
+
+                .border-t {
+                    border-top-style: var(--tw-border-style);
+                    border-top-width: 1px;
+                }
+
+                .border-r {
+                    border-right-style: var(--tw-border-style);
+                    border-right-width: 1px;
+                }
+
+                .border-b {
+                    border-bottom-style: var(--tw-border-style);
+                    border-bottom-width: 1px;
+                }
+
+                .border-l {
+                    border-left-style: var(--tw-border-style);
+                    border-left-width: 1px;
+                }
+
+                .border-border {
+                    border-color: var(--color-border);
+                }
+
+                .bg-background {
+                    background-color: var(--color-background);
+                }
+
+                .bg-blue-100 {
+                    background-color: var(--color-blue-100);
+                }
+
+                .bg-emerald-100 {
+                    background-color: var(--color-emerald-100);
+                }
+
+                .bg-green-100 {
+                    background-color: var(--color-green-100);
+                }
+
+                .bg-input {
+                    background-color: var(--color-input);
+                }
+
+                .bg-muted {
+                    background-color: var(--color-muted);
+                }
+
+                .bg-orange-100 {
+                    background-color: var(--color-orange-100);
+                }
+
+                .bg-pink-100 {
+                    background-color: var(--color-pink-100);
+                }
+
+                .bg-primary {
+                    background-color: var(--color-primary);
+                }
+
+                .bg-purple-100 {
+                    background-color: var(--color-purple-100);
+                }
+
+                .bg-secondary {
+                    background-color: var(--color-secondary);
+                }
+
+                .bg-slate-100 {
+                    background-color: var(--color-slate-100);
+                }
+
+                .bg-surface {
+                    background-color: var(--color-surface);
+                }
+
+                .p-5 {
+                    padding: calc(var(--spacing) * 5);
+                }
+
+                .px-2 {
+                    padding-inline: calc(var(--spacing) * 2);
+                }
+
+                .px-3 {
+                    padding-inline: calc(var(--spacing) * 3);
+                }
+
+                .px-4 {
+                    padding-inline: calc(var(--spacing) * 4);
+                }
+
+                .px-6 {
+                    padding-inline: calc(var(--spacing) * 6);
+                }
+
+                .px-8 {
+                    padding-inline: calc(var(--spacing) * 8);
+                }
+
+                .px-10 {
+                    padding-inline: calc(var(--spacing) * 10);
+                }
+
+                .py-1 {
+                    padding-block: calc(var(--spacing) * 1);
+                }
+
+                .py-2 {
+                    padding-block: calc(var(--spacing) * 2);
+                }
+
+                .py-3 {
+                    padding-block: calc(var(--spacing) * 3);
+                }
+
+                .py-4 {
+                    padding-block: calc(var(--spacing) * 4);
+                }
+
+                .pt-4 {
+                    padding-top: calc(var(--spacing) * 4);
+                }
+
+                .pt-8 {
+                    padding-top: calc(var(--spacing) * 8);
+                }
+
+                .pt-10 {
+                    padding-top: calc(var(--spacing) * 10);
+                }
+
+                .pb-8 {
+                    padding-bottom: calc(var(--spacing) * 8);
+                }
+
+                .pb-10 {
+                    padding-bottom: calc(var(--spacing) * 10);
+                }
+
+                .pl-6 {
+                    padding-left: calc(var(--spacing) * 6);
+                }
+
+                .text-center {
+                    text-align: center;
+                }
+
+                .text-left {
+                    text-align: left;
+                }
+
+                .text-right {
+                    text-align: right;
+                }
+
+                .font-body {
+                    font-family: var(--font-body);
+                }
+
+                .font-headings {
+                    font-family: var(--font-headings);
+                }
+
+                .text-3xl {
+                    font-size: var(--text-3xl);
+                    line-height: var(--tw-leading, var(--text-3xl--line-height));
+                }
+
+                .text-base {
+                    font-size: var(--text-base);
+                    line-height: var(--tw-leading, var(--text-base--line-height));
+                }
+
+                .text-sm {
+                    font-size: var(--text-sm);
+                    line-height: var(--tw-leading, var(--text-sm--line-height));
+                }
+
+                .text-xl {
+                    font-size: var(--text-xl);
+                    line-height: var(--tw-leading, var(--text-xl--line-height));
+                }
+
+                .text-xs {
+                    font-size: var(--text-xs);
+                    line-height: var(--tw-leading, var(--text-xs--line-height));
+                }
+
+                .font-bold {
+                    --tw-font-weight: var(--font-weight-bold);
+                    font-weight: var(--font-weight-bold);
+                }
+
+                .font-medium {
+                    --tw-font-weight: var(--font-weight-medium);
+                    font-weight: var(--font-weight-medium);
+                }
+
+                .tracking-tight {
+                    --tw-tracking: var(--tracking-tight);
+                    letter-spacing: var(--tracking-tight);
+                }
+
+                .tracking-wider {
+                    --tw-tracking: var(--tracking-wider);
+                    letter-spacing: var(--tracking-wider);
+                }
+
+                .tracking-widest {
+                    --tw-tracking: var(--tracking-widest);
+                    letter-spacing: var(--tracking-widest);
+                }
+
+                .text-blue-700 {
+                    color: var(--color-blue-700);
+                }
+
+                .text-danger {
+                    color: var(--color-danger);
+                }
+
+                .text-emerald-700 {
+                    color: var(--color-emerald-700);
+                }
+
+                .text-foreground {
+                    color: var(--color-foreground);
+                }
+
+                .text-green-700 {
+                    color: var(--color-green-700);
+                }
+
+                .text-muted-foreground {
+                    color: var(--color-muted-foreground);
+                }
+
+                .text-orange-700 {
+                    color: var(--color-orange-700);
+                }
+
+                .text-pink-700 {
+                    color: var(--color-pink-700);
+                }
+
+                .text-primary {
+                    color: var(--color-primary);
+                }
+
+                .text-primary-foreground {
+                    color: var(--color-primary-foreground);
+                }
+
+                .text-purple-700 {
+                    color: var(--color-purple-700);
+                }
+
+                .text-secondary-foreground {
+                    color: var(--color-secondary-foreground);
+                }
+
+                .text-slate-700 {
+                    color: var(--color-slate-700);
+                }
+
+                .capitalize {
+                    text-transform: capitalize;
+                }
+
+                .uppercase {
+                    text-transform: uppercase;
+                }
+            }
+
+            @property --tw-border-style {
+                syntax: "*";
+                inherits: false;
+                initial-value: solid;
+            }
+
+            @property --tw-font-weight {
+                syntax: "*";
+                inherits: false;
+            }
+
+            @property --tw-tracking {
+                syntax: "*";
+                inherits: false;
+            }
+
+            @layer properties {
+                @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color: rgb(from red r g b)))) {
+
+                    *,
+                    ::before,
+                    ::after,
+                    ::backdrop {
+                        --tw-border-style: solid;
+                        --tw-font-weight: initial;
+                        --tw-tracking: initial;
+                    }
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="flex bg-background font-body" style="min-height: 900px"
+            data-component="@screens/TransactionsCompact.jsx">
+            <div class="flex flex-col bg-surface border-r border-border" style="width: 220px; min-height: 900px"
+                data-component="@components/SideNav.jsx">
+                <div class="px-6 pt-8 pb-10">
+                    <span class="font-headings font-bold text-xl text-foreground tracking-tight"><span
+                            data-file="/components/SideNav.jsx" data-idx="0">Finance Hub</span></span>
+                </div>
+                <nav class="flex flex-col gap-1 px-3 flex-1">
+                    <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-body font-medium text-secondary-foreground"
+                        data-media-type="banani-button"><span class="" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+                  width: 16px;
+                  height: 16px;
+                " data-icon="layout-dashboard" data-component="@globalComponents/Icon.jsx"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="3">
+                                    <rect width="7" height="9" x="3" y="3" rx="1"></rect>
+                                    <rect width="7" height="5" x="14" y="3" rx="1"></rect>
+                                    <rect width="7" height="9" x="14" y="12" rx="1"></rect>
+                                    <rect width="7" height="5" x="3" y="16" rx="1"></rect>
+                                </g>
+                            </svg></span>Overview</a><a
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-body font-medium bg-primary text-primary-foreground"
+                        data-media-type="banani-button"><span class="" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+                  width: 16px;
+                  height: 16px;
+                " data-icon="arrow-left-right" data-component="@globalComponents/Icon.jsx"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="3" d="M8 3L4 7l4 4M4 7h16m-4 14l4-4l-4-4m4 4H4"></path>
+                            </svg></span>Transactions</a><a
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-body font-medium text-secondary-foreground"
+                        data-media-type="banani-button"><span class="" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+                  width: 16px;
+                  height: 16px;
+                " data-icon="pie-chart" data-component="@globalComponents/Icon.jsx"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="3">
+                                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                                </g>
+                            </svg></span>Budgets</a><a
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-body font-medium text-secondary-foreground"
+                        data-media-type="banani-button"><span class="" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+                  width: 16px;
+                  height: 16px;
+                " data-icon="trending-up" data-component="@globalComponents/Icon.jsx"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="3">
+                                    <path d="M16 7h6v6"></path>
+                                    <path d="m22 7l-8.5 8.5l-5-5L2 17"></path>
+                                </g>
+                            </svg></span>Investments</a><a
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-body font-medium text-secondary-foreground"
+                        data-media-type="banani-button"><span class="" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+                  width: 16px;
+                  height: 16px;
+                " data-icon="credit-card" data-component="@globalComponents/Icon.jsx"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="3">
+                                    <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                                    <path d="M2 10h20"></path>
+                                </g>
+                            </svg></span>Cards</a><a
+                        class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-body font-medium text-secondary-foreground"
+                        data-media-type="banani-button"><span class="" style="
+                  display: inline-flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+                  width: 16px;
+                  height: 16px;
+                " data-icon="landmark" data-component="@globalComponents/Icon.jsx"><svg
+                                xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24">
+                                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="3"
+                                    d="M10 18v-7m1.119-8.795a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949zM14 18v-7m4 7v-7M3 22h18M6 18v-7">
+                                </path>
+                            </svg></span>Accounts</a>
+                </nav>
+                <div class="px-4 pb-8 pt-4 border-t border-border mt-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                            <span class="" style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 14px;
+                    height: 14px;
+                  " data-icon="user" data-component="@globalComponents/Icon.jsx"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="3.4285714285714284">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </g>
+                                </svg></span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm text-foreground font-medium"><span data-file="/components/SideNav.jsx"
+                                    data-idx="1">Alex Monroe</span></span><span
+                                class="text-xs text-muted-foreground"><span data-file="/components/SideNav.jsx"
+                                    data-idx="2">Personal</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 flex flex-col px-8 pt-8 pb-8">
+                <div class="flex items-center justify-between gap-6 mb-6">
+                    <div>
+                        <h1 class="font-headings font-bold text-3xl text-foreground">
+                            <span data-file="/screens/TransactionsCompact.jsx" data-idx="0">Transactions</span>
+                        </h1>
+                        <p class="text-sm text-muted-foreground mt-1">
+                            <span data-file="/screens/TransactionsCompact.jsx" data-idx="1">All activity across your
+                                accounts</span>
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 bg-input border border-border rounded-md px-3 py-2">
+                            <span class="" style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 14px;
+                    height: 14px;
+                  " data-icon="search" data-component="@globalComponents/Icon.jsx"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="3.4285714285714284">
+                                        <path d="m21 21l-4.34-4.34"></path>
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                    </g>
+                                </svg></span><span class="text-sm text-muted-foreground"><span
+                                    data-file="/screens/TransactionsCompact.jsx" data-idx="2">Search...</span></span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-input border border-border rounded-md px-3 py-2">
+                            <span class="" style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 14px;
+                    height: 14px;
+                  " data-icon="calendar" data-component="@globalComponents/Icon.jsx"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="3.4285714285714284">
+                                        <path d="M8 2v4m8-4v4"></path>
+                                        <rect width="18" height="18" x="3" y="4" rx="2"></rect>
+                                        <path d="M3 10h18"></path>
+                                    </g>
+                                </svg></span><span class="text-sm text-muted-foreground"><span
+                                    data-file="/screens/TransactionsCompact.jsx" data-idx="3">Jun
+                                    2025</span></span><span class="" style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 12px;
+                    height: 12px;
+                  " data-icon="chevron-down" data-component="@globalComponents/Icon.jsx"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="12px" height="12px" viewBox="0 0 24 24">
+                                    <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="4" d="m6 9l6 6l6-6"></path>
+                                </svg></span>
+                        </div>
+                        <button
+                            class="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium"
+                            data-media-type="banani-button">
+                            <span class="" style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 14px;
+                    height: 14px;
+                  " data-icon="download" data-component="@globalComponents/Icon.jsx"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="3.4285714285714284">
+                                        <path d="M12 15V3m9 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <path d="m7 10l5 5l5-5"></path>
+                                    </g>
+                                </svg></span><span data-file="/screens/TransactionsCompact.jsx"
+                                data-idx="4">Export</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-3 mb-6">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex flex-col gap-3 bg-surface rounded-lg p-5 border border-border flex-1"
+                            data-component="@components/StatCard.jsx">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-muted-foreground uppercase tracking-widest"><span
+                                        data-file="/screens/TransactionsCompact.jsx" data-idx="5">Total
+                                        Spent</span></span>
+                                <div class="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+                                    <span class="" style="
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        width: 14px;
+                        height: 14px;
+                      " data-icon="trending-down" data-component="@globalComponents/Icon.jsx"><svg
+                                            xmlns="http://www.w3.org/2000/svg" width="14px" height="14px"
+                                            viewBox="0 0 24 24">
+                                            <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="3.4285714285714284">
+                                                <path d="M16 17h6v-6"></path>
+                                                <path d="m22 17l-8.5-8.5l-5 5L2 7"></path>
+                                            </g>
+                                        </svg></span>
+                                </div>
+                            </div>
+                            <span class="text-3xl font-headings font-bold text-foreground">$3,420</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium text-danger">-12%</span><span
+                                    class="text-xs text-muted-foreground"><span
+                                        data-file="/screens/TransactionsCompact.jsx" data-idx="6">vs last
+                                        month</span></span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-3 bg-surface rounded-lg p-5 border border-border flex-1"
+                            data-component="@components/StatCard.jsx">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-muted-foreground uppercase tracking-widest"><span
+                                        data-file="/screens/TransactionsCompact.jsx"
+                                        data-idx="7">Transactions</span></span>
+                                <div class="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+                                    <span class="" style="
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        flex-shrink: 0;
+                        width: 14px;
+                        height: 14px;
+                      " data-icon="list" data-component="@globalComponents/Icon.jsx"><svg
+                                            xmlns="http://www.w3.org/2000/svg" width="14px" height="14px"
+                                            viewBox="0 0 24 24">
+                                            <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="3.4285714285714284"
+                                                d="M3 5h.01M3 12h.01M3 19h.01M8 5h13M8 12h13M8 19h13"></path>
+                                        </svg></span>
+                                </div>
+                            </div>
+                            <span class="text-3xl font-headings font-bold text-foreground">48</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium text-primary">+5</span><span
+                                    class="text-xs text-muted-foreground"><span
+                                        data-file="/screens/TransactionsCompact.jsx" data-idx="8">this
+                                        month</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-6">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs text-muted-foreground uppercase tracking-widest font-medium"><span
+                                    data-file="/screens/TransactionsCompact.jsx" data-idx="9">Filter by
+                                    Status</span></span>
+                            <div class="flex gap-2">
+                                <button
+                                    class="px-3 py-1 rounded-md text-xs font-medium bg-primary text-primary-foreground"
+                                    data-media-type="banani-button">
+                                    All</button><button
+                                    class="px-3 py-1 rounded-md text-xs font-medium bg-muted text-foreground"
+                                    data-media-type="banani-button">
+                                    Income</button><button
+                                    class="px-3 py-1 rounded-md text-xs font-medium bg-muted text-foreground"
+                                    data-media-type="banani-button">
+                                    Expenses</button><button
+                                    class="px-3 py-1 rounded-md text-xs font-medium bg-muted text-foreground"
+                                    data-media-type="banani-button">
+                                    Transfers</button><button
+                                    class="px-3 py-1 rounded-md text-xs font-medium bg-muted text-foreground"
+                                    data-media-type="banani-button">
+                                    Pending
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1 pl-6 border-l border-border">
+                            <span class="text-xs text-muted-foreground uppercase tracking-widest font-medium"><span
+                                    data-file="/screens/TransactionsCompact.jsx" data-idx="10">Categories</span></span>
+                            <div class="flex gap-2">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-orange-100 text-orange-700"
+                                    data-component="@components/CategoryBadge.jsx">food</span><span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-blue-100 text-blue-700"
+                                    data-component="@components/CategoryBadge.jsx">subscription</span><span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-pink-100 text-pink-700"
+                                    data-component="@components/CategoryBadge.jsx">shopping</span><span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-purple-100 text-purple-700"
+                                    data-component="@components/CategoryBadge.jsx">travel</span><span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-slate-100 text-slate-700"
+                                    data-component="@components/CategoryBadge.jsx">transfer</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-surface rounded-lg border border-border overflow-hidden flex-1 flex flex-col">
+                    <div class="flex items-center px-6 py-3 border-b border-border bg-muted shrink-0">
+                        <div class="w-10 mr-4"></div>
+                        <div class="flex-1 text-xs text-muted-foreground uppercase tracking-wider">
+                            <span data-file="/screens/TransactionsCompact.jsx" data-idx="11">Merchant</span>
+                        </div>
+                        <div class="w-40 text-xs text-muted-foreground uppercase tracking-wider text-center">
+                            <span data-file="/screens/TransactionsCompact.jsx" data-idx="12">Category</span>
+                        </div>
+                        <div class="w-24 text-xs text-muted-foreground uppercase tracking-wider text-right">
+                            <span data-file="/screens/TransactionsCompact.jsx" data-idx="13">Date</span>
+                        </div>
+                        <div class="w-28 text-xs text-muted-foreground uppercase tracking-wider text-right">
+                            <span data-file="/screens/TransactionsCompact.jsx" data-idx="14">Amount</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="repeat" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3">
+                                            <path d="m17 2l4 4l-4 4"></path>
+                                            <path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4l4-4"></path>
+                                            <path d="M21 13v1a4 4 0 0 1-4 4H3"></path>
+                                        </g>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Netflix</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium capitalize bg-blue-100 text-blue-700"
+                                    data-component="@components/CategoryBadge.jsx">subscription</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 14
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$15.99
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="utensils" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3"
+                                            d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20m14-7V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2zm0 0v7">
+                                        </path>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Whole Foods</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-orange-100 text-orange-700"
+                                    data-component="@components/CategoryBadge.jsx">food</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 14
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$62.40
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="arrow-down-left" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3" d="M17 7L7 17m10 0H7V7"></path>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Salary Deposit</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-emerald-100 text-emerald-700"
+                                    data-component="@components/CategoryBadge.jsx">income</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 13
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-primary">
+                                +$5,200.00
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="plane" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3"
+                                            d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8L4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1l3 2l2 3l1-1v-3l3-2l3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2">
+                                        </path>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">United Airlines</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-purple-100 text-purple-700"
+                                    data-component="@components/CategoryBadge.jsx">travel</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 12
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$348.00
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="repeat" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3">
+                                            <path d="m17 2l4 4l-4 4"></path>
+                                            <path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4l4-4"></path>
+                                            <path d="M21 13v1a4 4 0 0 1-4 4H3"></path>
+                                        </g>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Spotify</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium capitalize bg-blue-100 text-blue-700"
+                                    data-component="@components/CategoryBadge.jsx">subscription</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 11
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$9.99
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="shopping-bag" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3">
+                                            <path d="M16 10a4 4 0 0 1-8 0M3.103 6.034h17.794"></path>
+                                            <path
+                                                d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z">
+                                            </path>
+                                        </g>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Nike</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium capitalize bg-pink-100 text-pink-700"
+                                    data-component="@components/CategoryBadge.jsx">shopping</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 10
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$129.00
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="heart-pulse" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3">
+                                            <path
+                                                d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676a.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5">
+                                            </path>
+                                            <path d="M3.22 13H9.5l.5-1l2 4.5l2-7l1.5 3.5h5.27"></path>
+                                        </g>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">CVS Pharmacy</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-green-100 text-green-700"
+                                    data-component="@components/CategoryBadge.jsx">health</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 9
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$24.50
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="arrow-left-right" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3"
+                                            d="M8 3L4 7l4 4M4 7h16m-4 14l4-4l-4-4m4 4H4"></path>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Wire Transfer</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-slate-100 text-slate-700"
+                                    data-component="@components/CategoryBadge.jsx">transfer</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 8
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$500.00
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="utensils" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3"
+                                            d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20m14-7V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2zm0 0v7">
+                                        </path>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Trader Joe's</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-orange-100 text-orange-700"
+                                    data-component="@components/CategoryBadge.jsx">food</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 7
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$44.30
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="shopping-bag" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3">
+                                            <path d="M16 10a4 4 0 0 1-8 0M3.103 6.034h17.794"></path>
+                                            <path
+                                                d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z">
+                                            </path>
+                                        </g>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Amazon</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium capitalize bg-pink-100 text-pink-700"
+                                    data-component="@components/CategoryBadge.jsx">shopping</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 6
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$87.12
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="arrow-down-left" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3" d="M17 7L7 17m10 0H7V7"></path>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Freelance Payment</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span
+                                    class="px-2 py-1 rounded text-xs font-medium capitalize bg-emerald-100 text-emerald-700"
+                                    data-component="@components/CategoryBadge.jsx">income</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 5
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-primary">
+                                +$800.00
+                            </div>
+                        </div>
+                        <div class="flex items-center px-6 py-4 border-b border-border">
+                            <div class="w-10 h-10 rounded-lg bg-muted flex items-center justify-center mr-4 shrink-0">
+                                <span class="" style="
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                      width: 16px;
+                      height: 16px;
+                    " data-icon="repeat" data-component="@globalComponents/Icon.jsx"><svg
+                                        xmlns="http://www.w3.org/2000/svg" width="16px" height="16px"
+                                        viewBox="0 0 24 24">
+                                        <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="3">
+                                            <path d="m17 2l4 4l-4 4"></path>
+                                            <path d="M3 11v-1a4 4 0 0 1 4-4h14M7 22l-4-4l4-4"></path>
+                                            <path d="M21 13v1a4 4 0 0 1-4 4H3"></path>
+                                        </g>
+                                    </svg></span>
+                            </div>
+                            <div class="flex flex-col flex-1 min-w-0">
+                                <span class="text-base text-foreground font-medium">Apple One</span>
+                            </div>
+                            <div class="w-40 text-center">
+                                <span class="px-2 py-1 rounded text-xs font-medium capitalize bg-blue-100 text-blue-700"
+                                    data-component="@components/CategoryBadge.jsx">subscription</span>
+                            </div>
+                            <div class="w-24 text-sm text-muted-foreground text-right">
+                                Jun 4
+                            </div>
+                            <div class="w-28 text-right text-base font-medium font-headings text-foreground">
+                                -$29.95
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mt-6">
+                    <span class="text-sm text-muted-foreground"><span data-file="/screens/TransactionsCompact.jsx"
+                            data-idx="15">Showing 12 of 48 transactions</span></span>
+                    <div class="flex items-center gap-2">
+                        <button
+                            class="flex items-center gap-1 px-3 py-2 rounded-md bg-input border border-border text-sm text-muted-foreground"
+                            data-media-type="banani-button">
+                            <span class="" style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 14px;
+                    height: 14px;
+                  " data-icon="chevron-left" data-component="@globalComponents/Icon.jsx"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24">
+                                    <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="3.4285714285714284" d="m15 18l-6-6l6-6">
+                                    </path>
+                                </svg></span><span data-file="/screens/TransactionsCompact.jsx"
+                                data-idx="16">Previous</span></button><button
+                            class="flex items-center gap-1 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium"
+                            data-media-type="banani-button">
+                            <span data-file="/screens/TransactionsCompact.jsx" data-idx="17">Next</span><span class=""
+                                style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    width: 14px;
+                    height: 14px;
+                  " data-icon="chevron-right" data-component="@globalComponents/Icon.jsx"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="14px" height="14px" viewBox="0 0 24 24">
+                                    <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                        stroke-linejoin="round" stroke-width="3.4285714285714284" d="m9 18l6-6l-6-6">
+                                    </path>
+                                </svg></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+
+    </html>
+    <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
+</div>

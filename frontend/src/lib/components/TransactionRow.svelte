@@ -1,7 +1,26 @@
 <script>
   import { api } from "../api.js";
+  import Icon from "./Icon.svelte";
 
   let { tx, categories, colors, onchange } = $props();
+
+  const CATEGORY_ICONS = {
+    "Bar & Ristoranti": "utensils",
+    Spesa: "shopping-bag",
+    Trasporti: "arrow-left-right",
+    Auto: "arrow-left-right",
+    Abbonamenti: "repeat",
+    Utenze: "repeat",
+    Affitto: "landmark",
+    Salute: "heart-pulse",
+    Persona: "user",
+    Svago: "shopping-bag",
+    Shopping: "shopping-bag",
+    Riparazioni: "repeat",
+    Sigarette: "shopping-bag",
+    Regali: "shopping-bag",
+    Vacanza: "plane",
+  };
 
   let action = $state("");
   let error = $state("");
@@ -26,6 +45,8 @@
   let rimbNote = $state("");
 
   let isShared = $derived(tx.note && tx.note.toLowerCase().startsWith("condivisa"));
+  let catColor = $derived(colors[tx.category] || "#6966a0");
+  let icon = $derived(CATEGORY_ICONS[tx.category] || "repeat");
 
   function openAction(a) {
     error = "";
@@ -116,25 +137,36 @@
   }
 </script>
 
-<div class="row">
-  <div class="main">
-    <span class="date">{tx.date}</span>
-    <span class="desc">
-      {tx.description}
-      {#if isShared}<span title="Spesa condivisa">🔀</span>{/if}
-      {#if tx.note && !isShared}<span class="note-inline">— {tx.note}</span>{/if}
-    </span>
-    <span class="cat" style="background:{(colors[tx.category] || '#888')}22; color:{colors[tx.category] || '#888'}">
-      {tx.category}
-    </span>
-    <span class="amount" class:negative={tx.amount < 0} class:positive={tx.amount >= 0}>
+<div class="row-wrap">
+  <div class="row" style="--cat-color: {catColor}">
+    <div class="icon-cell" style="color: {catColor}">
+      <Icon name={icon} size={16} strokeWidth={2.2} />
+    </div>
+
+    <div class="desc-cell">
+      <span class="desc">{tx.description}</span>
+      {#if isShared}
+        <span class="note-inline">Spesa condivisa</span>
+      {:else if tx.note}
+        <span class="note-inline">{tx.note}</span>
+      {/if}
+    </div>
+
+    <div class="cat-cell">
+      <span class="cat" style="background:{catColor}1f; color:{catColor}">{tx.category}</span>
+    </div>
+
+    <div class="date-cell">{tx.date}</div>
+
+    <div class="amount-cell" class:income={tx.amount >= 0}>
       {tx.amount < 0 ? "−" : "+"}€{Math.abs(tx.amount).toFixed(2)}
-    </span>
-    <div class="actions">
-      <button title="Modifica" onclick={() => openAction("edit")}>✏️</button>
-      <button title="Spesa condivisa" onclick={() => openAction("shared")}>🔀</button>
-      <button title="Rimborso" onclick={() => openAction("reimburse")}>🔄</button>
-      <button title="Elimina" onclick={() => openAction("delete")}>🗑️</button>
+    </div>
+
+    <div class="actions-cell">
+      <button title="Modifica" onclick={() => openAction("edit")}><Icon name="pencil" size={14} /></button>
+      <button title="Spesa condivisa" onclick={() => openAction("shared")}><Icon name="arrow-left-right" size={14} /></button>
+      <button title="Rimborso" onclick={() => openAction("reimburse")}><Icon name="repeat" size={14} /></button>
+      <button title="Elimina" onclick={() => openAction("delete")}><Icon name="trash-2" size={14} /></button>
     </div>
   </div>
 
@@ -151,7 +183,7 @@
         </select>
         <input type="text" bind:value={editNote} placeholder="note" />
       </div>
-      <button type="submit">Salva modifiche</button>
+      <button type="submit" class="primary">Salva modifiche</button>
     </form>
   {:else if action === "shared"}
     <form class="panel" onsubmit={confirmShared}>
@@ -168,10 +200,10 @@
         Oppure dividi equamente tra
         <input type="number" min="2" max="10" bind:value={nPeople} />
         persone
-        <button type="button" onclick={splitEqually}>🔁 Calcola quota</button>
+        <button type="button" class="ghost" onclick={splitEqually}>Calcola quota</button>
       </label>
-      <p class="hint">💡 La tua quota: <strong>€{myQuota.toFixed(2)}</strong> · Da recuperare: <strong>€{rimbFromQuota.toFixed(2)}</strong></p>
-      <button type="submit">✅ Conferma e crea rimborso</button>
+      <p class="hint">La tua quota: <strong>€{myQuota.toFixed(2)}</strong> · Da recuperare: <strong>€{rimbFromQuota.toFixed(2)}</strong></p>
+      <button type="submit" class="primary">Conferma e crea rimborso</button>
     </form>
   {:else if action === "reimburse"}
     <form class="panel" onsubmit={confirmReimburse}>
@@ -187,96 +219,151 @@
         Note
         <input type="text" bind:value={rimbNote} />
       </label>
-      <button type="submit">Crea rimborso</button>
+      <button type="submit" class="primary">Crea rimborso</button>
     </form>
   {:else if action === "delete"}
     <div class="panel">
       <p>Eliminare questa transazione?</p>
       <button class="danger" onclick={confirmDelete}>Conferma eliminazione</button>
-      <button onclick={() => (action = "")}>Annulla</button>
+      <button class="ghost" onclick={() => (action = "")}>Annulla</button>
     </div>
   {/if}
 </div>
 
 <style>
-  .row {
-    background: #fff;
-    border-radius: 10px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.5rem;
+  .row-wrap {
+    border-bottom: 1px solid var(--border);
   }
 
-  .main {
+  .row-wrap:last-child {
+    border-bottom: none;
+  }
+
+  .row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-5);
+    transition: background 0.12s ease;
   }
 
-  .date {
-    color: #888;
-    font-size: 0.8rem;
-    width: 6rem;
+  .row:hover {
+    background: var(--muted);
+  }
+
+  .row:hover .actions-cell {
+    opacity: 1;
+  }
+
+  .icon-cell {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+  }
+
+  .desc-cell {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2) 0;
   }
 
   .desc {
-    flex: 1;
-    min-width: 0;
+    font-size: var(--text-base);
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: var(--space-2) 0;
   }
 
   .note-inline {
-    color: #888;
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .cat-cell {
+    width: 150px;
+    text-align: center;
+    flex-shrink: 0;
   }
 
   .cat {
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    flex-shrink: 0;
-  }
-
-  .amount {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
     font-weight: 500;
-    width: 5.5rem;
-    text-align: right;
+  }
+
+  .date-cell {
+    width: 150px;
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
     flex-shrink: 0;
   }
 
-  .amount.negative { color: #d85a30; }
-  .amount.positive { color: #1d9e75; }
+  .amount-cell {
+    width: 150px;
+    text-align: center;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-base);
+    color: var(--text-primary);
+    flex-shrink: 0;
+  }
 
-  .actions {
+  .amount-cell.income {
+    color: var(--accent);
+  }
+
+  .actions-cell {
+    width: 104px;
     display: flex;
+    justify-content: flex-end;
     gap: 2px;
     flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.12s ease;
   }
 
-  .actions button {
+  .actions-cell button {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: 6px;
-    font-size: 0.9rem;
+    padding: 5px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    display: flex;
   }
 
-  .actions button:hover {
-    background: #f5f5f3;
+  .actions-cell button:hover {
+    background: var(--surface);
+    color: var(--accent);
   }
 
   .panel {
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #ececea;
+    margin: 0 var(--space-5) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
 
   .panel .fields {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
 
@@ -284,39 +371,66 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
   }
 
   .panel input, .panel select {
     padding: 0.35rem 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: var(--text-sm);
   }
 
-  .panel button[type="submit"], .panel button.danger {
+  .panel button.primary {
     align-self: flex-start;
     padding: 0.4rem 0.9rem;
     border: none;
-    border-radius: 6px;
-    background: #185fa5;
-    color: white;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-foreground);
+    font-weight: 500;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
+  }
+
+  .panel button.primary:hover {
+    background: var(--accent-hover);
+  }
+
+  .panel button.ghost {
+    align-self: flex-start;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: var(--text-sm);
   }
 
   .panel button.danger {
-    background: #d85a30;
+    align-self: flex-start;
+    padding: 0.4rem 0.9rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--danger);
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: var(--text-sm);
   }
 
   .hint {
-    font-size: 0.85rem;
-    color: #555;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
     margin: 0;
   }
 
   .error {
-    color: #d85a30;
-    font-size: 0.85rem;
+    color: var(--danger);
+    font-size: var(--text-sm);
+    margin: 0 var(--space-5);
   }
 </style>

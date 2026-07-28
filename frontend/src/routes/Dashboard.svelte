@@ -10,7 +10,7 @@
 </script>
 
 <section>
-  <h2>📊 Dashboard</h2>
+  <h2>Dashboard</h2>
   {#if error}
     <p class="error">Backend non raggiungibile: {error}</p>
   {:else}
@@ -19,5 +19,5 @@
 </section>
 
 <style>
-  .error { color: #d85a30; }
+  .error { color: var(--danger); }
 </style>

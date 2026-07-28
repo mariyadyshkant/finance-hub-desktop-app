@@ -1,9 +1,12 @@
 <script>
+  import Icon from "./Icon.svelte";
+
   let { routes, current, onNavigate } = $props();
 </script>
 
 <nav class="sidebar">
-  <h1>💶 Finance Hub</h1>
+  <div class="brand">Finance Hub</div>
+
   <ul>
     {#each routes as route}
       <li>
@@ -11,66 +14,116 @@
           class:active={current === route.id}
           onclick={() => onNavigate(route.id)}
         >
-          <span class="icon">{route.icon}</span>
+          <Icon name={route.icon} size={16} strokeWidth={2.5} />
           {route.label}
         </button>
       </li>
     {/each}
   </ul>
+
+  <div class="footer">
+    <div class="avatar">
+      <Icon name="user" size={14} strokeWidth={3} />
+    </div>
+    <div class="footer-text">
+      <span class="name">Mariya</span>
+      <span class="sub">Uso personale</span>
+    </div>
+  </div>
 </nav>
 
 <style>
   .sidebar {
     width: 220px;
     flex-shrink: 0;
-    background: #ffffff;
-    border-right: 1px solid #ececea;
-    padding: 1.25rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
     height: 100vh;
-    overflow-y: auto;
   }
 
-  h1 {
-    font-size: 1.1rem;
-    margin: 0 0.5rem 1.5rem;
+  .brand {
+    font-family: var(--font-heading);
+    font-weight: 1000;
+    font-size: var(--text-2xl);
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+    padding: var(--space-6) var(--space-5) var(--space-5);
   }
 
   ul {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0 var(--space-3);
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 1px;
+    flex: 1;
+    overflow-y: auto;
   }
 
   button {
-    width: 100%;
+    width: 90%;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    padding: 0.5rem 0.6rem;
+    gap: var(--space-3);
+    padding: 0.6rem var(--space-4);
     border: none;
     background: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    font-weight: 500;
     text-align: left;
     cursor: pointer;
-    color: #2a2a28;
+    color: var(--nav-inactive);
+    transition: background 0.12s ease, color 0.12s ease;
   }
 
   button:hover {
-    background: #f5f5f3;
+    background: var(--muted);
   }
 
   button.active {
-    background: #eef3fb;
-    color: #185fa5;
-    font-weight: 500;
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
 
-  .icon {
-    width: 1.2rem;
-    text-align: center;
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-top: 1px solid var(--border);
+    margin-top: var(--space-4);
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--muted);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .footer-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .name {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .sub {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
   }
 </style>

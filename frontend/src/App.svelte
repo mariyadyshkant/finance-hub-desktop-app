@@ -10,14 +10,14 @@
   import Pianificazione from "./routes/Pianificazione.svelte";
 
   const routes = [
-    { id: "dashboard", label: "Dashboard", icon: "📊", component: Dashboard },
-    { id: "transazioni", label: "Transazioni", icon: "💳", component: Transazioni },
-    { id: "rimborsi", label: "Rimborsi", icon: "🔄", component: Rimborsi },
-    { id: "splitwise", label: "Splitwise", icon: "🏦", component: Splitwise },
-    { id: "stipendi", label: "Stipendi", icon: "📅", component: Stipendi },
-    { id: "risparmi", label: "Risparmi", icon: "🐷", component: Risparmi },
-    { id: "storico-notion", label: "Storico Notion", icon: "📓", component: StoricoNotion },
-    { id: "pianificazione", label: "Pianificazione", icon: "🎯", component: Pianificazione },
+    { id: "dashboard", label: "Dashboard", icon: "layout-dashboard", component: Dashboard },
+    { id: "transazioni", label: "Transazioni", icon: "arrow-left-right", component: Transazioni },
+    { id: "rimborsi", label: "Rimborsi", icon: "repeat", component: Rimborsi },
+    { id: "splitwise", label: "Splitwise", icon: "landmark", component: Splitwise },
+    { id: "stipendi", label: "Stipendi", icon: "trending-up", component: Stipendi },
+    { id: "risparmi", label: "Risparmi", icon: "wallet", component: Risparmi },
+    { id: "storico-notion", label: "Storico Notion", icon: "file-text", component: StoricoNotion },
+    { id: "pianificazione", label: "Pianificazione", icon: "pie-chart", component: Pianificazione },
   ];
 
   let current = $state("dashboard");
@@ -38,7 +38,7 @@
 
   .content {
     flex: 1;
-    padding: 2rem;
+    padding: var(--space-6);
     height: 100vh;
     overflow-y: auto;
   }

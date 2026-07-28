@@ -10,7 +10,7 @@
 </script>
 
 <section>
-  <h2>🏦 Splitwise</h2>
+  <h2>Splitwise</h2>
   {#if error}
     <p class="error">{error}</p>
   {:else if user}
@@ -21,5 +21,5 @@
 </section>
 
 <style>
-  .error { color: #d85a30; }
+  .error { color: var(--danger); }
 </style>

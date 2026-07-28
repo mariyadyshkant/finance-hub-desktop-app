@@ -24,25 +24,31 @@ CATEGORIES = [
     "Altro",
 ]
 
+# Palette allineata al wireframe (tema chiaro, frontend/dist/assets/): ogni
+# colore è la tinta "satura" del badge — il frontend calcola lo sfondo
+# pastello applicando una bassa opacità a questo stesso colore, così le 18
+# categorie condividono lo stesso trattamento visivo dei 6-7 esempi nel
+# wireframe (badge chiaro + testo colorato) senza dover mantenere due valori
+# per categoria.
 CAT_COLORS = {
-    "Bar & Ristoranti":  "#D85A30",
-    "Spesa":             "#1D9E75",
-    "Trasporti":         "#378ADD",
-    "Auto":              "#185FA5",
-    "Abbonamenti":       "#7F77DD",
-    "Utenze":            "#BA7517",
-    "Affitto":           "#8B4513",
-    "Salute":            "#639922",
-    "Persona":           "#D4537E",
-    "Svago":             "#534AB7",
-    "Shopping":          "#888780",
-    "Riparazioni":       "#5F5E5A",
-    "Sigarette":         "#E24B4A",
-    "Regali":            "#F09995",
-    "Vacanza":           "#0F6E56",
-    "Entrata":           "#1D9E75",
-    "Rimborso ricevuto": "#0F6E56",
-    "Altro":             "#B4B2A9",
+    "Bar & Ristoranti":  "#c2410c",  # orange-700
+    "Spesa":             "#4d7c0f",  # lime-700
+    "Trasporti":         "#0369a1",  # sky-700
+    "Auto":              "#4338ca",  # indigo-700
+    "Abbonamenti":       "#1d4ed8",  # blue-700
+    "Utenze":            "#b45309",  # amber-700
+    "Affitto":           "#44403c",  # stone-700
+    "Salute":            "#15803d",  # green-700
+    "Persona":           "#be123c",  # rose-700
+    "Svago":             "#6d28d9",  # violet-700
+    "Shopping":          "#be185d",  # pink-700
+    "Riparazioni":       "#334155",  # slate-700
+    "Sigarette":         "#b91c1c",  # red-700
+    "Regali":            "#a21caf",  # fuchsia-700
+    "Vacanza":           "#7e22ce",  # purple-700
+    "Entrata":           "#047857",  # emerald-700
+    "Rimborso ricevuto": "#0f766e",  # teal-700
+    "Altro":             "#0e7490",  # cyan-700
 }
 
 def categorize(desc: str, amount: float) -> str:

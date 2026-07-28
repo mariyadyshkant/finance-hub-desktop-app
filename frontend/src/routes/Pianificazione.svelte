@@ -25,5 +25,5 @@
 </section>
 
 <style>
-  .error { color: #d85a30; }
+  .error { color: var(--danger); }
 </style>

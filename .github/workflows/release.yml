@@ -17,6 +17,7 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
@@ -32,6 +33,10 @@ jobs:
           python-version: "3.12"
 
       - name: Installa dipendenze root (Electron)
+        run: npm ci
+
+      - name: Installa dipendenze frontend (Svelte/Vite)
+        working-directory: frontend
         run: npm ci
 
       - name: Crea venv e installa dipendenze backend (macOS)

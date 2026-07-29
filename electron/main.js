@@ -15,10 +15,15 @@ let mainWindow;
 // In un'app pacchettizzata aperta con doppio click il PATH ereditato è molto
 // più povero di quello di un terminale (niente venv attivo) — puntiamo quindi
 // esplicitamente al python del venv se esiste, invece di affidarci a un
-// generico "python3" che potrebbe non avere FastAPI installato.
+// generico "python3" che potrebbe non avere FastAPI installato. Il layout del
+// venv differisce tra macOS/Linux (venv/bin/python3) e Windows (venv/Scripts/python.exe).
 function resolvePython(backendDir) {
-  const venvPython = path.join(backendDir, "venv", "bin", "python3");
-  return fs.existsSync(venvPython) ? venvPython : "python3";
+  const venvPython =
+    process.platform === "win32"
+      ? path.join(backendDir, "venv", "Scripts", "python.exe")
+      : path.join(backendDir, "venv", "bin", "python3");
+  if (fs.existsSync(venvPython)) return venvPython;
+  return process.platform === "win32" ? "python" : "python3";
 }
 
 function startBackend() {

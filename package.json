@@ -32,7 +32,14 @@
       "!backend/.env.*"
     ],
     "mac": {
-      "category": "public.app-category.finance"
+      "category": "public.app-category.finance",
+      "target": ["dmg", "zip"]
+    },
+    "win": {
+      "target": ["nsis"]
+    },
+    "publish": {
+      "provider": "github"
     }
   }
 }

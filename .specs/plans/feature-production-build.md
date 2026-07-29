@@ -32,3 +32,16 @@ Far funzionare `npm run build` (electron-builder) producendo un `.app`/`.dmg` ut
 - Verificato che il backend bundlato funziona davvero: lanciato `venv/bin/python3 -m uvicorn` dall'interno del pacchetto, confermato `/health` e `/api/categories` rispondono.
 
 **Nota per l'utente:** poiché `backend/.env` è escluso di proposito dal pacchetto, l'app pacchettizzata usa SQLite locale (vuoto) finché non si copia manualmente `backend/.env` dentro `FinanceD.app/Contents/Resources/app/backend/.env` — scelta deliberata per non spedire segreti dentro un artefatto binario.
+
+## Aggiunta 2026-07-29 — release automatica Mac + Windows via GitHub Actions
+
+L'utente ha chiesto anche una build Windows. Non è producibile da questo Mac:
+il `backend/venv/` bundlato è legato a macOS (simlink al Python di sistema,
+wheel compilate ARM64) — servirebbe un ambiente Python Windows reale.
+
+**Cosa è stato fatto:**
+- `electron/main.js`: `resolvePython()` ora gestisce anche il layout venv di Windows (`venv/Scripts/python.exe` invece di `venv/bin/python3`).
+- `package.json`: aggiunto target `win.nsis` e `publish: {provider: "github"}`.
+- `.github/workflows/release.yml`: workflow che si attiva su push di tag `v*.*.*` (o manualmente), builda in parallelo su `macos-latest` e `windows-latest` — ogni job crea il proprio venv nativo (`setup-python` + `pip install -r requirements.txt`) prima di lanciare `electron-builder --publish always`, che allega gli installer alla GitHub Release corrispondente al tag.
+
+**Non ancora fatto:** nessun tag pushato/release creata — questo workflow va testato al primo tag reale.

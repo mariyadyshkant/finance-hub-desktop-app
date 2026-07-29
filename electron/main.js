@@ -2,6 +2,7 @@ const { app, BrowserWindow } = require("electron");
 const { spawn } = require("child_process");
 const http = require("http");
 const path = require("path");
+const fs = require("fs");
 
 const BACKEND_PORT = 8000;
 const BACKEND_URL = `http://127.0.0.1:${BACKEND_PORT}`;
@@ -11,10 +12,20 @@ const BACKEND_POLL_INTERVAL_MS = 250;
 let backendProcess;
 let mainWindow;
 
+// In un'app pacchettizzata aperta con doppio click il PATH ereditato è molto
+// più povero di quello di un terminale (niente venv attivo) — puntiamo quindi
+// esplicitamente al python del venv se esiste, invece di affidarci a un
+// generico "python3" che potrebbe non avere FastAPI installato.
+function resolvePython(backendDir) {
+  const venvPython = path.join(backendDir, "venv", "bin", "python3");
+  return fs.existsSync(venvPython) ? venvPython : "python3";
+}
+
 function startBackend() {
   const backendDir = path.join(__dirname, "..", "backend");
+  const pythonBin = resolvePython(backendDir);
   backendProcess = spawn(
-    "python3",
+    pythonBin,
     ["-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", String(BACKEND_PORT)],
     { cwd: backendDir, stdio: "inherit" }
   );

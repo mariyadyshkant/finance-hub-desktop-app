@@ -27,6 +27,8 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Crea la release draft per questo tag
         run: gh release create "${{ github.ref_name }}" --draft --title "${TAG#v}" --notes ""
         env:

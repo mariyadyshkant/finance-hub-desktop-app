@@ -25,6 +25,10 @@ backend/**/__pycache__/
 backend/.venv/
 backend/venv/
 
+# PyInstaller (backend/dist/ già coperto da "dist/" sotto)
+backend/build/
+*.spec
+
 # electron build output
 dist/
 release/

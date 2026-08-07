@@ -1,8 +1,14 @@
+import sys
+from pathlib import Path
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-load_dotenv()
+# Stessa logica di database.py: sotto PyInstaller __file__ non è affidabile,
+# .env deve stare accanto all'eseguibile (o allo script in sviluppo).
+_base_dir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
+load_dotenv(_base_dir / ".env")
 
 from database import init_db, init_monthly_summaries, init_planned_expenses
 from importers.helpers import CATEGORIES, CAT_COLORS
@@ -54,3 +60,11 @@ app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
 app.include_router(splitwise.router, prefix="/api/splitwise", tags=["splitwise"])
 app.include_router(summaries.router, prefix="/api/summaries", tags=["summaries"])
 app.include_router(planning.router, prefix="/api/planning", tags=["planning"])
+
+
+if __name__ == "__main__":
+    # Entry point per l'eseguibile PyInstaller — in sviluppo si usa invece
+    # `python -m uvicorn main:app`, che non passa da qui.
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)

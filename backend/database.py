@@ -1,9 +1,18 @@
 import json
 import os
+import sys
 import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "finance.db"
+if getattr(sys, "frozen", False):
+    # Eseguibile PyInstaller: __file__ punta dentro il bundle temporaneo
+    # (_MEIPASS), non un percorso persistente — usiamo la cartella
+    # dell'eseguibile stesso, dove vogliamo che finance.db viva davvero.
+    _BASE_DIR = Path(sys.executable).parent
+else:
+    _BASE_DIR = Path(__file__).parent
+
+DB_PATH = _BASE_DIR / "finance.db"
 
 TURSO_URL = os.getenv("TURSO_DATABASE_URL")
 TURSO_TOKEN = os.getenv("TURSO_AUTH_TOKEN")

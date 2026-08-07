@@ -24,12 +24,13 @@
     "asar": false,
     "files": [
       "electron/**/*",
-      "frontend/dist/**/*",
-      "backend/**/*",
-      "!backend/**/__pycache__/**",
-      "!backend/*.db",
-      "!backend/.env",
-      "!backend/.env.*"
+      "frontend/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/dist",
+        "to": "backend-dist"
+      }
     ],
     "mac": {
       "category": "public.app-category.finance",

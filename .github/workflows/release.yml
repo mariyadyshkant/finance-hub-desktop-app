@@ -1,9 +1,11 @@
 name: Release
 
 # Builda l'app per Mac e Windows e allega gli installer alla GitHub Release
-# corrispondente al tag pushato (es. v0.1.0). Il backend Python va compilato
-# separatamente su ogni piattaforma — non è un binario cross-platform,
-# quindi ogni job crea il proprio venv nativo prima di impacchettare.
+# corrispondente al tag pushato (es. v0.1.0). Il backend Python viene
+# congelato con PyInstaller in un eseguibile standalone per ciascuna
+# piattaforma — un venv "normale" non è mai portabile (si appoggia sempre
+# all'installazione Python della macchina che l'ha creato), quindi ogni job
+# lo compila da zero sul proprio runner nativo prima di impacchettare.
 
 on:
   push:
@@ -39,19 +41,25 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Crea venv e installa dipendenze backend (macOS)
-        if: runner.os != 'Windows'
+      - name: Installa dipendenze backend + PyInstaller
         working-directory: backend
-        run: |
-          python3 -m venv venv
-          ./venv/bin/pip install -r requirements.txt
+        run: pip install -r requirements.txt pyinstaller
 
-      - name: Crea venv e installa dipendenze backend (Windows)
-        if: runner.os == 'Windows'
+      - name: Congela il backend con PyInstaller
         working-directory: backend
-        run: |
-          python -m venv venv
-          .\venv\Scripts\pip install -r requirements.txt
+        run: >
+          pyinstaller --name financed-backend --onefile
+          --hidden-import uvicorn.logging
+          --hidden-import uvicorn.loops
+          --hidden-import uvicorn.loops.auto
+          --hidden-import uvicorn.protocols
+          --hidden-import uvicorn.protocols.http
+          --hidden-import uvicorn.protocols.http.auto
+          --hidden-import uvicorn.protocols.websockets
+          --hidden-import uvicorn.protocols.websockets.auto
+          --hidden-import uvicorn.lifespan
+          --hidden-import uvicorn.lifespan.on
+          main.py
 
       - name: Build frontend
         run: npm run build:frontend

@@ -12,11 +12,9 @@ const BACKEND_POLL_INTERVAL_MS = 250;
 let backendProcess;
 let mainWindow;
 
-// In un'app pacchettizzata aperta con doppio click il PATH ereditato è molto
-// più povero di quello di un terminale (niente venv attivo) — puntiamo quindi
-// esplicitamente al python del venv se esiste, invece di affidarci a un
-// generico "python3" che potrebbe non avere FastAPI installato. Il layout del
-// venv differisce tra macOS/Linux (venv/bin/python3) e Windows (venv/Scripts/python.exe).
+// In sviluppo usiamo python3 dal venv locale (niente bisogno di rifare la
+// build PyInstaller a ogni modifica). Il layout del venv differisce tra
+// macOS/Linux (venv/bin/python3) e Windows (venv/Scripts/python.exe).
 function resolvePython(backendDir) {
   const venvPython =
     process.platform === "win32"
@@ -27,13 +25,23 @@ function resolvePython(backendDir) {
 }
 
 function startBackend() {
-  const backendDir = path.join(__dirname, "..", "backend");
-  const pythonBin = resolvePython(backendDir);
-  backendProcess = spawn(
-    pythonBin,
-    ["-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", String(BACKEND_PORT)],
-    { cwd: backendDir, stdio: "inherit" }
-  );
+  if (app.isPackaged) {
+    // Produzione: eseguibile PyInstaller autonomo (vedi .github/workflows/
+    // release.yml) — non richiede Python installato sulla macchina di
+    // destinazione. Un venv "normale" non è mai portabile: si appoggia
+    // sempre all'installazione Python della macchina su cui è stato creato.
+    const exeName = process.platform === "win32" ? "financed-backend.exe" : "financed-backend";
+    const exePath = path.join(process.resourcesPath, "backend-dist", exeName);
+    backendProcess = spawn(exePath, [], { cwd: path.dirname(exePath), stdio: "inherit" });
+  } else {
+    const backendDir = path.join(__dirname, "..", "backend");
+    const pythonBin = resolvePython(backendDir);
+    backendProcess = spawn(
+      pythonBin,
+      ["-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", String(BACKEND_PORT)],
+      { cwd: backendDir, stdio: "inherit" }
+    );
+  }
   backendProcess.on("error", (err) => {
     console.error("Impossibile avviare il backend FastAPI:", err);
   });

@@ -26,13 +26,15 @@ Sostituire il placeholder di `Dashboard.svelte` con la UI reale, a parità di fu
 
 ## Status
 
-[~] In corso — implementata, build verificata, in attesa di test/revisione utente
+[x] Completata
 
-**Cosa è stato fatto finora:**
+**Completata il:** 2026-07-31
+
+**Cosa è stato fatto:**
 - `frontend/src/lib/components/Chart.svelte`: wrapper riusabile su Chart.js (crea/distrugge l'istanza in un `$effect`, responsive).
 - `frontend/src/lib/chartTheme.js`: token colore condivisi per i grafici (Chart.js non legge le custom property CSS).
 - `Dashboard.svelte`: selettore mese, import Revolut (PDF/CSV) con anteprima prima di confermare, 4 KPI, spese per categoria (barra orizzontale invece di torta — 18 categorie superano la soglia "~7 classi" della skill dataviz), andamento giornaliero (solo mesi Revolut), confronto ultimi mesi (colorato per fonte), andamento per categoria (selezione utente, max 6), media mensile per categoria (colore su stato: rosso se sopra media, verde se sotto).
 - Palette "fonte dati" (Revolut/Notion) validata con lo script della skill dataviz (`validate_palette.js`) — l'accento generale dell'app da solo falliva la soglia minima di saturazione (troppo desaturato per fare identità in un grafico), sostituito con un blu più saturo solo nel contesto grafici, interfaccia generale invariata.
-- **Deliberatamente non incluso**: "Budget vs spese reali" (la vecchia tabella `budgets` flat di Streamlit non è mai stata esposta nel nuovo backend — i budget reali vivono nel sistema mensile più recente, gestito dalla sezione Pianificazione non ancora costruita; verrà aggiunto lì).
+- **Deliberatamente non incluso qui**: "Budget vs spese reali" — ora coperto dal tab Consuntivo della sezione Pianificazione (completata in questa stessa sessione), che usa il sistema di budget mensile più recente invece della vecchia tabella flat `budgets` di Streamlit.
 
-**Non ancora fatto:** test con dati reali/build di verifica finale — l'utente ha chiesto di non lanciare `npm run build` automaticamente dopo ogni modifica, lo farà lei quando vorrà.
+**Non ancora fatto:** test con dati reali/build di verifica — l'utente ha chiesto di non lanciare `npm run build` automaticamente dopo ogni modifica, lo farà lei con `npm run dev` quando vorrà (stessa nota per tutte le sezioni completate in questa sessione).

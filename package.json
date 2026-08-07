@@ -1,6 +1,6 @@
 {
   "name": "finance-hub-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "FinanceD — app desktop nativa (Electron + Svelte + FastAPI)",
   "private": true,
   "main": "electron/main.js",

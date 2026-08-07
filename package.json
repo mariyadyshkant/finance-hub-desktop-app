@@ -32,12 +32,18 @@
         "to": "backend-dist"
       }
     ],
+    "afterPack": "scripts/afterPack.js",
     "mac": {
       "category": "public.app-category.finance",
-      "target": ["dmg", "zip"]
+      "target": ["dmg", "zip"],
+      "identity": null
     },
     "win": {
       "target": ["nsis"]
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Office"
     },
     "publish": {
       "provider": "github"

@@ -1,6 +1,6 @@
 name: Release
 
-# Builda l'app per Mac e Windows e allega gli installer alla GitHub Release
+# Builda l'app per Mac, Windows e Linux e allega gli installer alla GitHub Release
 # corrispondente al tag pushato (es. v0.1.0). Il backend Python viene
 # congelato con PyInstaller in un eseguibile standalone per ciascuna
 # piattaforma — un venv "normale" non è mai portabile (si appoggia sempre
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

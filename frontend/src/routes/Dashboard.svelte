@@ -1,5 +1,5 @@
 <script>
-  import { api } from "../lib/api.js";
+  import { api, apiBaseUrl } from "../lib/api.js";
   import Icon from "../lib/components/Icon.svelte";
   import Chart from "../lib/components/Chart.svelte";
   import { CHART_COLORS, baseScales } from "../lib/chartTheme.js";
@@ -290,7 +290,8 @@
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("http://127.0.0.1:8000/api/transactions/parse-revolut", {
+      const base = await apiBaseUrl();
+      const res = await fetch(`${base}/api/transactions/parse-revolut`, {
         method: "POST",
         body: formData,
       });

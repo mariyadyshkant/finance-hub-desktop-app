@@ -1,16 +1,44 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const http = require("http");
+const net = require("net");
 const path = require("path");
 const fs = require("fs");
 
-const BACKEND_PORT = 8000;
-const BACKEND_URL = `http://127.0.0.1:${BACKEND_PORT}`;
+const DEFAULT_BACKEND_PORT = 8000;
 const BACKEND_READY_TIMEOUT_MS = 20_000;
 const BACKEND_POLL_INTERVAL_MS = 250;
 
 let backendProcess;
 let mainWindow;
+let backendPort;
+let BACKEND_URL;
+
+// 8000 è spesso occupata da altri servizi di sviluppo sulla macchina
+// dell'utente (es. `php artisan serve`, altri backend locali) — se il
+// backend non riesce a partire su quella porta, le richieste finiscono
+// silenziosamente su quel servizio altrui invece che sul nostro (visto in
+// produzione: pagine d'errore Laravel/Werkzeug al posto delle risposte
+// FastAPI). Proviamo quindi porte successive finché non ne troviamo una
+// libera, invece di assumere che 8000 sia sempre disponibile.
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const tester = net.createServer();
+    tester.once("error", () => resolve(false));
+    tester.once("listening", () => {
+      tester.close(() => resolve(true));
+    });
+    tester.listen(port, "127.0.0.1");
+  });
+}
+
+async function findFreePort(preferredPort, maxAttempts = 20) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const candidate = preferredPort + i;
+    if (await isPortFree(candidate)) return candidate;
+  }
+  throw new Error(`Nessuna porta libera trovata a partire da ${preferredPort}`);
+}
 
 // In sviluppo usiamo python3 dal venv locale (niente bisogno di rifare la
 // build PyInstaller a ogni modifica). Il layout del venv differisce tra
@@ -24,7 +52,7 @@ function resolvePython(backendDir) {
   return process.platform === "win32" ? "python" : "python3";
 }
 
-function startBackend() {
+function startBackend(port) {
   if (app.isPackaged) {
     // Produzione: eseguibile PyInstaller autonomo (vedi .github/workflows/
     // release.yml) — non richiede Python installato sulla macchina di
@@ -32,13 +60,17 @@ function startBackend() {
     // sempre all'installazione Python della macchina su cui è stato creato.
     const exeName = process.platform === "win32" ? "financed-backend.exe" : "financed-backend";
     const exePath = path.join(process.resourcesPath, "backend-dist", exeName);
-    backendProcess = spawn(exePath, [], { cwd: path.dirname(exePath), stdio: "inherit" });
+    backendProcess = spawn(exePath, [], {
+      cwd: path.dirname(exePath),
+      stdio: "inherit",
+      env: { ...process.env, PORT: String(port) },
+    });
   } else {
     const backendDir = path.join(__dirname, "..", "backend");
     const pythonBin = resolvePython(backendDir);
     backendProcess = spawn(
       pythonBin,
-      ["-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", String(BACKEND_PORT)],
+      ["-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", String(port)],
       { cwd: backendDir, stdio: "inherit" }
     );
   }
@@ -102,8 +134,12 @@ function createWindow() {
   });
 }
 
+ipcMain.handle("get-backend-port", () => backendPort);
+
 app.whenReady().then(async () => {
-  startBackend();
+  backendPort = await findFreePort(DEFAULT_BACKEND_PORT);
+  BACKEND_URL = `http://127.0.0.1:${backendPort}`;
+  startBackend(backendPort);
 
   try {
     await waitForBackend();
@@ -128,5 +164,5 @@ app.on("before-quit", () => {
   if (backendProcess) backendProcess.kill();
 });
 
-// Espone l'URL del backend al resto del processo main, se servisse altrove.
-module.exports = { BACKEND_URL };
+// Espone la porta del backend al resto del processo main, se servisse altrove.
+module.exports = { getBackendPort: () => backendPort };

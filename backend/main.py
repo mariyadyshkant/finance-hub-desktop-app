@@ -68,6 +68,12 @@ app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 if __name__ == "__main__":
     # Entry point per l'eseguibile PyInstaller — in sviluppo si usa invece
     # `python -m uvicorn main:app`, che non passa da qui.
+    import os
+
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Electron sceglie la porta libera e la passa qui via env var, per non
+    # bloccarsi se 8000 è già occupata da un altro servizio sulla macchina
+    # dell'utente (vedi electron/main.js: findFreePort).
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="127.0.0.1", port=port)

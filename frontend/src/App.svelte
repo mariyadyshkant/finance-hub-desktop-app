@@ -8,6 +8,7 @@
   import Risparmi from "./routes/Risparmi.svelte";
   import StoricoNotion from "./routes/StoricoNotion.svelte";
   import Pianificazione from "./routes/Pianificazione.svelte";
+  import Impostazioni from "./routes/Impostazioni.svelte";
 
   const routes = [
     { id: "dashboard", label: "Dashboard", icon: "layout-dashboard", component: Dashboard },
@@ -18,6 +19,7 @@
     { id: "risparmi", label: "Risparmi", icon: "wallet", component: Risparmi },
     { id: "storico-notion", label: "Storico Notion", icon: "file-text", component: StoricoNotion },
     { id: "pianificazione", label: "Pianificazione", icon: "pie-chart", component: Pianificazione },
+    { id: "impostazioni", label: "Impostazioni", icon: "settings", component: Impostazioni },
   ];
 
   let current = $state("dashboard");

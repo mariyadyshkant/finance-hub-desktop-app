@@ -112,10 +112,8 @@
         crea una nuova app (nome e URL qualsiasi) e copia l'<strong>API Key</strong>.
       </p>
       <p class="hint">
-        Aggiungila in <code>backend/.env</code>:
+        Poi vai su <strong>Impostazioni</strong> (in fondo alla barra laterale) e incollala lì — niente file da modificare a mano.
       </p>
-      <pre>SPLITWISE_API_KEY=la-tua-chiave</pre>
-      <p class="hint">Poi riavvia l'app.</p>
     </div>
   {:else if error}
     <p class="error">Errore di connessione a Splitwise: {error}</p>
@@ -231,15 +229,6 @@
 
   .setup-panel a {
     color: var(--accent);
-  }
-
-  .setup-panel pre {
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: var(--space-3);
-    font-size: var(--text-sm);
-    color: var(--text-primary);
   }
 
   .connected {

@@ -1,8 +1,15 @@
 <script>
+  import { api } from "../api.js";
   import Icon from "./Icon.svelte";
   import logo from "../assets/logo.png";
 
   let { routes, current, onNavigate } = $props();
+
+  let displayName = $state("");
+
+  $effect(() => {
+    api.get("/settings").then((s) => (displayName = s.display_name || "")).catch(() => {});
+  });
 </script>
 
 <nav class="sidebar">
@@ -24,15 +31,15 @@
     {/each}
   </ul>
 
-  <div class="footer">
+  <button class="footer" onclick={() => onNavigate("impostazioni")}>
     <div class="avatar">
       <Icon name="user" size={14} strokeWidth={3} />
     </div>
     <div class="footer-text">
-      <span class="name">Mariya</span>
+      <span class="name">{displayName || "Il tuo profilo"}</span>
       <span class="sub">Uso personale</span>
     </div>
-  </div>
+  </button>
 </nav>
 
 <style>
@@ -97,9 +104,19 @@
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    width: 100%;
     padding: var(--space-4);
+    border: none;
     border-top: 1px solid var(--border);
     margin-top: var(--space-4);
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .footer:hover {
+    background: var(--muted);
   }
 
   .avatar {

@@ -3,15 +3,19 @@ import os
 import requests
 from fastapi import APIRouter, HTTPException
 
+import database as db
+
 router = APIRouter()
 
 BASE_URL = "https://secure.splitwise.com/api/v3.0"
 
 
 def _headers():
-    api_key = os.getenv("SPLITWISE_API_KEY")
+    # Fonte primaria: Impostazioni nell'app (tabella app_settings). Fallback
+    # su .env per chi l'aveva già configurata prima che esistesse la UI.
+    api_key = db.get_setting("splitwise_api_key") or os.getenv("SPLITWISE_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=400, detail="SPLITWISE_API_KEY non configurata in backend/.env")
+        raise HTTPException(status_code=400, detail="Splitwise non configurato. Vai su Impostazioni per collegare il tuo account.")
     return {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
 

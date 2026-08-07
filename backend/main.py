@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 _base_dir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
 load_dotenv(_base_dir / ".env")
 
-from database import init_db, init_monthly_summaries, init_planned_expenses
+from database import init_db, init_monthly_summaries, init_planned_expenses, init_settings
 from importers.helpers import CATEGORIES, CAT_COLORS
 from routes import (
     transactions,
@@ -21,6 +21,7 @@ from routes import (
     splitwise,
     summaries,
     planning,
+    settings,
 )
 
 app = FastAPI(title="FinanceD API")
@@ -40,6 +41,7 @@ def on_startup():
     init_db()
     init_monthly_summaries()
     init_planned_expenses()
+    init_settings()
 
 
 @app.get("/health")
@@ -60,6 +62,7 @@ app.include_router(salary.router, prefix="/api/salary", tags=["salary"])
 app.include_router(splitwise.router, prefix="/api/splitwise", tags=["splitwise"])
 app.include_router(summaries.router, prefix="/api/summaries", tags=["summaries"])
 app.include_router(planning.router, prefix="/api/planning", tags=["planning"])
+app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
 
 if __name__ == "__main__":

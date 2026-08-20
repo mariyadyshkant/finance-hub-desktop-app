@@ -1,9 +1,11 @@
+import os
 import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 # Stessa logica di database.py: sotto PyInstaller __file__ non è affidabile,
 # .env deve stare accanto all'eseguibile (o allo script in sviluppo).
@@ -34,6 +36,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Stesso pattern già usato per TURSO_DATABASE_URL: se API_ACCESS_TOKEN non è
+# impostata (caso desktop locale, invariato), il middleware non fa nulla. Se
+# è impostata (caso hosted su Fly.io per l'app mobile), ogni richiesta senza
+# l'header corretto viene rifiutata — esclusa /health, che serve ai controlli
+# di Fly.io stesso e non espone dati.
+@app.middleware("http")
+async def require_api_token(request: Request, call_next):
+    token = os.getenv("API_ACCESS_TOKEN")
+    if token and request.url.path != "/health":
+        if request.headers.get("X-API-Token") != token:
+            return JSONResponse(status_code=401, content={"detail": "Token di accesso mancante o non valido"})
+    return await call_next(request)
 
 
 @app.on_event("startup")

@@ -50,21 +50,23 @@ Docker per questo):
   con header sbagliato → `401`; con header corretto → `200`; `/health`
   senza header → `200` (esclusa, come da design).
 
-**Non ancora verificato**: build Docker reale e deploy Fly.io — richiedono
-un account Fly.io dell'utente (`fly auth login`, `fly launch`, `fly deploy`,
-impostazione dei secret `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`/
-`API_ACCESS_TOKEN`). **Importante**: senza `TURSO_DATABASE_URL` impostata
-come secret Fly.io, il backend hosted scriverebbe su un SQLite locale
-nel filesystem effimero del container, che si azzera a ogni deploy/riavvio
-— la sincronizzazione dati desktop↔mobile richiede Turso configurato su
-entrambi i lati.
+**Deploy Fly.io completato e verificato** (2026-08-20): l'utente ha creato
+l'app `financed-backend` su Fly.io (regione `fra`), aggiunto un metodo di
+pagamento (richiesto da Fly.io anche per l'uso hobby/gratuito — non
+aggirabile), impostato i secret `TURSO_DATABASE_URL`/`TURSO_AUTH_TOKEN`/
+`API_ACCESS_TOKEN` e deployato. Verificato con `curl` da questa parte:
+- `GET /health` senza token → `200` (esente, come da design)
+- `GET /api/categories` senza token → `401`
+- `GET /api/transactions` con `X-API-Token` corretto → `200`, con le
+  transazioni reali dell'utente — conferma che il backend hosted legge
+  dallo stesso Turso del desktop, dati sincronizzati tra i due.
+
+URL pubblico: `https://financed-backend.fly.dev`.
 
 ## Prossimi passi
 
-- L'utente esegue `fly launch`/`fly deploy` dal suo account (comandi da
-  preparare quando richiesto).
-- Verificare con `curl` che l'URL pubblico Fly.io risponda su `/health` e
-  rifiuti `/api/transactions` senza token corretto.
-- Poi Parte 2: scaffold Expo nel nuovo repo `financed-mobile`.
+- Parte 2: scaffold Expo nel nuovo repo `financed-mobile`, usando questo
+  URL + il token come credenziali di connessione salvate con
+  `expo-secure-store` alla prima configurazione dell'app.
 
-- [x] Completata (2026-08-07) — deploy Fly.io reale da fare quando l'utente è pronto
+- [x] Completata (2026-08-20) — inclusa la verifica end-to-end del deploy Fly.io

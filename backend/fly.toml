@@ -1,0 +1,19 @@
+# Config minima Fly.io per il backend FastAPI hosted (usato dall'app mobile).
+# L'app desktop non tocca questo file: continua a usare il backend locale
+# spawnato da Electron. Prima del primo deploy, `fly launch` genererà/
+# aggiornerà `app` con il nome effettivo scelto su Fly.
+
+app = "financed-backend"
+primary_region = "fra"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"

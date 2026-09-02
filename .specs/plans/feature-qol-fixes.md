@@ -51,6 +51,13 @@ Quattro sistemazioni segnalate dall'utente sull'app desktop:
   `importers/helpers.py`). `GET /api/categories` restituisce anche `icons`.
   `TransactionRow.svelte` usa la mappa `icons` dal backend invece della vecchia
   `CATEGORY_ICONS` hardcoded.
+- **Catalogo icone**: `frontend/src/lib/icons.generated.js` — ~415 icone Lucide
+  (ISC) vendorizzate come dati (generate da `lucide-static`, nessuna dipendenza
+  runtime), curate per categorie di finanza personale (cibo, trasporti, casa,
+  bollette, denaro, salute, svago, viaggi, animali, tech, ecc.) + una mappa di
+  parole chiave. `icons.js` espone `ICONS` (merge, i nomi scritti a mano
+  vincono), `PICKABLE_ICONS` e `iconMatches(name, query)`. Il selettore in
+  Impostazioni ha una casella di ricerca che filtra su nome + parole chiave.
 
 ## Status
 

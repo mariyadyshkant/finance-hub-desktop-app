@@ -1,9 +1,10 @@
 <script>
   import { api } from "../lib/api.js";
   import Icon from "../lib/components/Icon.svelte";
-  import { ICONS } from "../lib/icons.js";
+  import { PICKABLE_ICONS, iconMatches } from "../lib/icons.js";
 
-  const ICON_NAMES = Object.keys(ICONS);
+  let iconQuery = $state("");
+  let filteredIcons = $derived(PICKABLE_ICONS.filter((n) => iconMatches(n, iconQuery)));
 
   let displayName = $state("");
   let splitwiseConfigured = $state(false);
@@ -230,7 +231,10 @@
                   class="icon-preview"
                   style="color:{editCatColor}"
                   title="Cambia icona"
-                  onclick={() => (editIconPickerOpen = !editIconPickerOpen)}
+                  onclick={() => {
+                    editIconPickerOpen = !editIconPickerOpen;
+                    iconQuery = "";
+                  }}
                 >
                   <Icon name={editCatIcon} size={16} />
                 </button>
@@ -241,21 +245,25 @@
                 <button class="btn-secondary sm" onclick={() => (editingCat = null)}>Annulla</button>
               </div>
               {#if editIconPickerOpen}
-                <div class="icon-grid">
-                  {#each ICON_NAMES as ic}
-                    <button
-                      type="button"
-                      class="icon-choice"
-                      class:selected={editCatIcon === ic}
-                      title={ic}
-                      onclick={() => {
-                        editCatIcon = ic;
-                        editIconPickerOpen = false;
-                      }}
-                    >
-                      <Icon name={ic} size={16} />
-                    </button>
-                  {/each}
+                <div class="icon-picker">
+                  <input class="icon-search" type="text" placeholder="Cerca icona…" bind:value={iconQuery} />
+                  <div class="icon-grid">
+                    {#each filteredIcons as ic (ic)}
+                      <button
+                        type="button"
+                        class="icon-choice"
+                        class:selected={editCatIcon === ic}
+                        title={ic}
+                        onclick={() => {
+                          editCatIcon = ic;
+                          editIconPickerOpen = false;
+                        }}
+                      >
+                        <Icon name={ic} size={16} />
+                      </button>
+                    {/each}
+                    {#if filteredIcons.length === 0}<span class="icon-empty">Nessuna icona</span>{/if}
+                  </div>
                 </div>
               {/if}
             </div>
@@ -304,7 +312,10 @@
             class="icon-preview"
             style="color:{newCatColor}"
             title="Scegli icona"
-            onclick={() => (newIconPickerOpen = !newIconPickerOpen)}
+            onclick={() => {
+              newIconPickerOpen = !newIconPickerOpen;
+              iconQuery = "";
+            }}
           >
             <Icon name={newCatIcon} size={16} />
           </button>
@@ -312,21 +323,25 @@
           <button type="submit" class="btn-primary sm"><Icon name="plus" size={14} /> Aggiungi</button>
         </div>
         {#if newIconPickerOpen}
-          <div class="icon-grid">
-            {#each ICON_NAMES as ic}
-              <button
-                type="button"
-                class="icon-choice"
-                class:selected={newCatIcon === ic}
-                title={ic}
-                onclick={() => {
-                  newCatIcon = ic;
-                  newIconPickerOpen = false;
-                }}
-              >
-                <Icon name={ic} size={16} />
-              </button>
-            {/each}
+          <div class="icon-picker">
+            <input class="icon-search" type="text" placeholder="Cerca icona…" bind:value={iconQuery} />
+            <div class="icon-grid">
+              {#each filteredIcons as ic (ic)}
+                <button
+                  type="button"
+                  class="icon-choice"
+                  class:selected={newCatIcon === ic}
+                  title={ic}
+                  onclick={() => {
+                    newCatIcon = ic;
+                    newIconPickerOpen = false;
+                  }}
+                >
+                  <Icon name={ic} size={16} />
+                </button>
+              {/each}
+              {#if filteredIcons.length === 0}<span class="icon-empty">Nessuna icona</span>{/if}
+            </div>
           </div>
         {/if}
       </form>
@@ -503,16 +518,37 @@
     cursor: default;
   }
 
+  .icon-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .icon-search {
+    padding: 0.4rem var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--input-bg);
+    font-size: var(--text-sm);
+  }
+
   .icon-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
     gap: 4px;
-    max-height: 132px;
+    max-height: 220px;
     overflow-y: auto;
     padding: var(--space-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--input-bg);
+  }
+
+  .icon-empty {
+    grid-column: 1 / -1;
+    padding: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
   }
 
   .icon-choice {

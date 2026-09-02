@@ -1,7 +1,11 @@
-// Set minimale di icone in stile Lucide (stroke-based), per restare fedeli
-// al wireframe di riferimento (frontend/dist/assets/*) senza aggiungere una
-// libreria di icone come dipendenza.
-export const ICONS = {
+// Set in stile Lucide (stroke-based), fedele al wireframe di riferimento
+// (frontend/dist/assets/*). `BASE_ICONS` è il set scritto a mano usato dalla UI
+// (nav, azioni…); `GENERATED_ICONS` è un catalogo Lucide vendorizzato come dati
+// (icons.generated.js) per il selettore icona delle categorie. Nessuna libreria
+// di icone come dipendenza runtime — solo dati, stesso formato.
+import { GENERATED_ICONS, ICON_KEYWORDS } from "./icons.generated.js";
+
+const BASE_ICONS = {
   "layout-dashboard": `<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>`,
   "arrow-left-right": `<path d="M8 3L4 7l4 4M4 7h16m-4 14l4-4l-4-4m4 4H4"/>`,
   "pie-chart": `<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>`,
@@ -41,3 +45,19 @@ export const ICONS = {
   settings: `<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>`,
   x: `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`,
 };
+
+// I nomi scritti a mano vincono sui duplicati del catalogo (icone rifinite a
+// mano per la nav e il wireframe).
+export const ICONS = { ...GENERATED_ICONS, ...BASE_ICONS };
+
+// Nomi selezionabili nel picker (pagina Impostazioni), ordinati.
+export const PICKABLE_ICONS = Object.keys(ICONS).sort();
+
+// Ricerca del picker: match su nome + parole chiave Lucide.
+export function iconMatches(name, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  if (name.includes(q)) return true;
+  const kw = ICON_KEYWORDS[name];
+  return kw ? kw.toLowerCase().includes(q) : false;
+}

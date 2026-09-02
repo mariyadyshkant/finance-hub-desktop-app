@@ -12,8 +12,14 @@ from fastapi.responses import JSONResponse
 _base_dir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
 load_dotenv(_base_dir / ".env")
 
-from database import init_db, init_monthly_summaries, init_planned_expenses, init_settings
-from importers.helpers import CATEGORIES, CAT_COLORS
+import database as db
+from database import (
+    init_db,
+    init_monthly_summaries,
+    init_planned_expenses,
+    init_settings,
+    init_categories,
+)
 from routes import (
     transactions,
     reimbursements,
@@ -25,6 +31,7 @@ from routes import (
     planning,
     settings,
     telegram,
+    categories,
 )
 
 app = FastAPI(title="FinanceD API")
@@ -63,6 +70,7 @@ def on_startup():
     init_monthly_summaries()
     init_planned_expenses()
     init_settings()
+    init_categories()
 
 
 @app.get("/health")
@@ -72,7 +80,11 @@ def health():
 
 @app.get("/api/categories")
 def get_categories():
-    return {"categories": CATEGORIES, "colors": CAT_COLORS}
+    cats = db.get_categories()
+    return {
+        "categories": [c["name"] for c in cats],
+        "colors": {c["name"]: c["color"] for c in cats},
+    }
 
 
 app.include_router(transactions.router, prefix="/api/transactions", tags=["transactions"])
@@ -85,6 +97,7 @@ app.include_router(summaries.router, prefix="/api/summaries", tags=["summaries"]
 app.include_router(planning.router, prefix="/api/planning", tags=["planning"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 app.include_router(telegram.router, prefix="/api/telegram", tags=["telegram"])
+app.include_router(categories.router, prefix="/api/categories", tags=["categories"])
 
 
 if __name__ == "__main__":

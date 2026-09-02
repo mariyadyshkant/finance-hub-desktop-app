@@ -24,6 +24,7 @@ from routes import (
     summaries,
     planning,
     settings,
+    telegram,
 )
 
 app = FastAPI(title="FinanceD API")
@@ -41,11 +42,16 @@ app.add_middleware(
 # impostata (caso desktop locale, invariato), il middleware non fa nulla. Se
 # è impostata (caso hosted su Fly.io per l'app mobile), ogni richiesta senza
 # l'header corretto viene rifiutata — esclusa /health, che serve ai controlli
-# di Fly.io stesso e non espone dati.
+# di Fly.io stesso e non espone dati, e il webhook Telegram, che Telegram
+# chiama senza poter mandare header custom (verifica un suo segreto a parte —
+# vedi routes/telegram.py).
+_TOKEN_EXEMPT = ("/health", "/api/telegram/webhook")
+
+
 @app.middleware("http")
 async def require_api_token(request: Request, call_next):
     token = os.getenv("API_ACCESS_TOKEN")
-    if token and request.url.path != "/health":
+    if token and not request.url.path.startswith(_TOKEN_EXEMPT):
         if request.headers.get("X-API-Token") != token:
             return JSONResponse(status_code=401, content={"detail": "Token di accesso mancante o non valido"})
     return await call_next(request)
@@ -78,6 +84,7 @@ app.include_router(splitwise.router, prefix="/api/splitwise", tags=["splitwise"]
 app.include_router(summaries.router, prefix="/api/summaries", tags=["summaries"])
 app.include_router(planning.router, prefix="/api/planning", tags=["planning"])
 app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
+app.include_router(telegram.router, prefix="/api/telegram", tags=["telegram"])
 
 
 if __name__ == "__main__":

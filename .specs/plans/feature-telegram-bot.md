@@ -10,7 +10,7 @@ database Turso già usato da desktop e backend hosted.
 
 - Backend FastAPI hosted su Fly.io (`financed-backend`, issue-mobile-1) — già in prod
 - Turso configurato come database condiviso — già fatto
-- Chiave API Anthropic (`ANTHROPIC_API_KEY`) come secret Fly.io
+- Chiave gratuita Google AI Studio (`GEMINI_API_KEY`) come secret Fly.io
 - Un bot creato su @BotFather (token) + il proprio `chat_id`
 
 ## Stack
@@ -20,10 +20,14 @@ database Turso già usato da desktop e backend hosted.
   precede il backend hosted attuale. Un solo deploy, riusa `database.py` e il
   client Turso HTTP.
 - Chiamate alla Bot API di Telegram con `requests` (no `python-telegram-bot`).
-- Parsing dei messaggi con Claude (SDK `anthropic`), non Gemini: la chiave
-  Anthropic è già prevista nella config del progetto. Modello configurabile via
-  `TELEGRAM_PARSER_MODEL` (default `claude-opus-5`; `claude-haiku-4-5` per
-  tagliare i costi).
+- Parsing dei messaggi con **Gemini Flash** (SDK `google-genai`), structured
+  output JSON con schema imposto. Modello configurabile via
+  `TELEGRAM_PARSER_MODEL` (default `gemini-2.5-flash`; `gemini-2.5-flash-lite`
+  più leggero). Chiave gratuita da Google AI Studio (`GEMINI_API_KEY`).
+  - Prima iterazione fatta con Claude (`anthropic`, function-calling):
+    abbandonata quando l'utente ha realizzato che l'API Anthropic è a consumo
+    (credito prepagato, ~480 msg con 5 $ su Opus 5). Gemini Flash gratis era
+    già l'idea dell'ADR originale.
 - Auth: il webhook verifica `X-Telegram-Bot-Api-Secret-Token`
   (`TELEGRAM_WEBHOOK_SECRET`); il bot risponde solo a `TELEGRAM_CHAT_ID`.
 - Il path `/api/telegram/webhook` è esente dal middleware `X-API-Token` in
@@ -42,22 +46,24 @@ database Turso già usato da desktop e backend hosted.
 ## File
 
 ```
-backend/telegram_bot.py        ← logica bot: comandi, parsing Claude, accesso DB
+backend/telegram_bot.py        ← logica bot: comandi, parsing Gemini, accesso DB
 backend/routes/telegram.py     ← webhook + helper set-webhook/info/delete-webhook
 backend/main.py                ← include router + esenzione middleware
-backend/requirements.txt       ← + anthropic
+backend/requirements.txt       ← + google-genai
 backend/.env.example           ← nuovo, documenta tutte le env var
 ```
 
 ## Setup (una tantum)
 
 1. @BotFather → `/newbot` → copia il token
-2. `fly secrets set TELEGRAM_BOT_TOKEN=... ANTHROPIC_API_KEY=... TELEGRAM_WEBHOOK_SECRET=... --app financed-backend`
-3. Scrivi un messaggio al bot, poi `https://api.telegram.org/bot<TOKEN>/getUpdates` → copia `message.chat.id`
-4. `fly secrets set TELEGRAM_CHAT_ID=... --app financed-backend`
-5. `fly deploy` (dalla cartella `backend/`)
-6. Registra il webhook:
-   `curl -X POST https://financed-backend.fly.dev/api/telegram/set-webhook -H "X-API-Token: <API_ACCESS_TOKEN>" -H "Content-Type: application/json" -d '{"base_url":"https://financed-backend.fly.dev"}'`
+2. Chiave Gemini gratuita su https://aistudio.google.com/app/apikey
+3. `fly secrets set TELEGRAM_BOT_TOKEN=... GEMINI_API_KEY=... TELEGRAM_WEBHOOK_SECRET=... --app financed-backend`
+4. Scrivi un messaggio al bot, poi `https://api.telegram.org/bot<TOKEN>/getUpdates` → copia `message.chat.id` (o usa @userinfobot)
+5. `fly secrets set TELEGRAM_CHAT_ID=... --app financed-backend`
+6. `fly deploy` (dalla cartella `backend/`)
+7. Registra il webhook (una riga sola, niente `\`):
+   `curl "https://api.telegram.org/bot<TOKEN>/setWebhook?url=https://financed-backend.fly.dev/api/telegram/webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>"`
+   (in alternativa `POST /api/telegram/set-webhook` col body `{"base_url":"..."}` e header `X-API-Token`, che imposta anche il menu comandi)
 
 ## Output atteso
 
@@ -66,9 +72,15 @@ categoria "Bar & Ristoranti" in Turso, visibile subito nell'app desktop.
 
 ## Status
 
-[ ] Non iniziata
 [x] Codice scritto e testato in locale (import, round-trip DB con RETURNING id,
-    webhook + esenzione middleware, formattazione comandi). Parsing Claude non
-    verificato dal vivo: nessuna chiave Anthropic nell'ambiente di sviluppo.
-[ ] Setup BotFather + secret Fly.io + deploy + registrazione webhook (utente)
-[ ] Verifica end-to-end da telefono
+    webhook + esenzione middleware via TestClient, formattazione comandi,
+    costruzione del config Gemini con lo schema). Parsing Gemini non ancora
+    verificato dal vivo (serve `GEMINI_API_KEY`).
+[x] Bot creato su @BotFather, deploy su Fly.io fatto, webhook registrato
+    (`getWebhookInfo` OK, 0 pending, nessun errore). Catena Telegram → webhook
+    → bot → LLM verificata (l'errore che si vedeva era solo la chiave LLM).
+[~] Swap Claude → Gemini in corso: serve `fly secrets set GEMINI_API_KEY=...`
+    + `fly deploy` (requirements cambiati: `anthropic` → `google-genai`).
+    Rimuovere il vecchio secret: `fly secrets unset ANTHROPIC_API_KEY`.
+[ ] Verifica end-to-end da telefono con Gemini
+[ ] Merge in `dev`

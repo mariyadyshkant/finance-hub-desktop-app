@@ -9,14 +9,16 @@ Scelte (vedi ADR.md → "Integrazione Telegram Bot"):
   API (`sendMessage`, `setWebhook`), fatte con `requests` — già una dipendenza.
   Stessa filosofia di `turso_client.py` (client HTTP fatto in casa, zero build
   native).
-- Parsing dei messaggi in linguaggio naturale con Claude (SDK `anthropic`), non
-  Gemini: la chiave API Anthropic è già prevista nella config del progetto.
+- Parsing dei messaggi in linguaggio naturale con Gemini Flash (SDK
+  `google-genai`), piano gratuito di Google AI Studio: costo zero per un bot
+  personale.
 - Il bot risponde SOLO a `TELEGRAM_CHAT_ID`: chiunque altro conosca il nome del
   bot riceve un rifiuto secco.
 - Le spese sono salvate con importo NEGATIVO, come fa l'app desktop per le
   spese manuali (`frontend/.../Transazioni.svelte`: default -10). Entrate e
   rimborsi restano positivi.
 """
+import json
 import os
 from datetime import date, timedelta
 
@@ -29,10 +31,12 @@ from importers.helpers import CATEGORIES
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 ALLOWED_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
-# Default esplicito su Opus 5. Per un parser di frasi brevi è sovradimensionato:
-# `claude-haiku-4-5` costa una frazione e basta e avanza — impostare
-# TELEGRAM_PARSER_MODEL per cambiarlo senza toccare il codice.
-PARSER_MODEL = os.getenv("TELEGRAM_PARSER_MODEL", "claude-opus-5")
+# Modello Gemini per il parsing. `gemini-2.5-flash` è nel piano gratuito ed è
+# abbondante per estrarre importo/descrizione/categoria da una frase.
+# `gemini-2.5-flash-lite` è ancora più leggero. Override senza toccare il codice.
+# `or` e non il default di getenv: la env var può essere presente ma vuota
+# (riga `TELEGRAM_PARSER_MODEL=` in .env o secret vuoto).
+PARSER_MODEL = os.getenv("TELEGRAM_PARSER_MODEL") or "gemini-2.5-flash"
 
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
@@ -144,96 +148,75 @@ def _insert_expense(description: str, amount_abs: float, category: str) -> int:
     return int(row[0])
 
 
-# ─── Interpretazione messaggi (Claude) ──────────────────────────────────────
+# ─── Interpretazione messaggi (Gemini) ─────────────────────────────────────
+# Gemini Flash sul piano gratuito di Google AI Studio (1M token/giorno, nessuna
+# carta): costo zero per un bot personale. Si usa la "structured output" di
+# Gemini (JSON con schema imposto) invece del function-calling: un solo schema
+# piatto, output deterministico, mapping banale sul resto del codice.
 
-_TOOLS = [
-    {
-        "name": "registra_spesa",
-        "description": "Registra una nuova spesa personale descritta nel messaggio.",
-        "strict": True,
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {
-                "descrizione": {
-                    "type": "string",
-                    "description": "Descrizione breve della spesa, es. 'Bar Boulevard', 'Caffè', 'Dentista'.",
-                },
-                "importo": {
-                    "type": "number",
-                    "description": "Importo speso in euro, sempre positivo.",
-                },
-                "categoria": {"type": "string", "enum": _EXPENSE_CATEGORIES},
-            },
-            "required": ["descrizione", "importo", "categoria"],
-        },
-    },
-    {
-        "name": "correggi_ultima",
-        "description": (
-            "Corregge un campo dell'ultima spesa registrata. Usare quando il "
-            "messaggio si riferisce chiaramente a una correzione (es. 'era 54 "
-            "non 45', 'mettila in Persona', 'la descrizione è sbagliata')."
-        ),
-        "strict": True,
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {
-                "campo": {"type": "string", "enum": ["importo", "categoria", "descrizione"]},
-                "nuovo_importo": {
-                    "type": "number",
-                    "description": "Nuovo importo positivo in euro, se campo = importo. Altrimenti 0.",
-                },
-                "nuova_categoria": {
-                    "type": "string",
-                    "enum": _EXPENSE_CATEGORIES + [""],
-                    "description": "Nuova categoria, se campo = categoria. Altrimenti stringa vuota.",
-                },
-                "nuova_descrizione": {
-                    "type": "string",
-                    "description": "Nuova descrizione, se campo = descrizione. Altrimenti stringa vuota.",
-                },
-            },
-            "required": ["campo", "nuovo_importo", "nuova_categoria", "nuova_descrizione"],
-        },
-    },
-    {
-        "name": "non_pertinente",
-        "description": "Il messaggio non è né una spesa né una correzione.",
-        "strict": True,
-        "input_schema": {
-            "type": "object",
-            "additionalProperties": False,
-            "properties": {"motivo": {"type": "string"}},
-            "required": ["motivo"],
-        },
-    },
-]
+_NO_FIELD = "nessuno"
 
 _SYSTEM_PROMPT = (
     "Sei l'assistente di un bot Telegram personale per registrare spese in "
-    "italiano. Ogni messaggio dell'utente è o una nuova spesa ('€8 bar "
-    "boulevard', 'ho pagato 45 dal dentista', '5 euro caffè contanti') o una "
-    "correzione dell'ultima spesa ('era 54 non 45', 'mettila in Persona'). "
-    "Scegli sempre esattamente uno strumento. Per le spese: estrai importo "
-    "(sempre positivo), una descrizione breve e pulita, e la categoria più "
-    "adatta tra quelle disponibili. Non inventare spese se il messaggio non ne "
-    "contiene una."
+    "italiano. Ogni messaggio dell'utente è di uno di questi tipi:\n"
+    "- una NUOVA spesa: '€8 bar boulevard', 'ho pagato 45 dal dentista', "
+    "'5 euro caffè contanti' → azione = registra_spesa, con importo (sempre "
+    "positivo), una descrizione breve e pulita, e la categoria più adatta.\n"
+    "- una CORREZIONE dell'ultima spesa: 'era 54 non 45', 'mettila in Persona', "
+    "'la descrizione è sbagliata, è X' → azione = correggi_ultima, indicando "
+    "campo_correzione e il nuovo valore (nuovo_numero per l'importo, "
+    "nuovo_testo per categoria o descrizione).\n"
+    "- nient'altro → azione = non_pertinente.\n"
+    "Non inventare spese se il messaggio non ne contiene una. Riempi sempre "
+    f"tutti i campi: usa 0, stringa vuota o '{_NO_FIELD}' per quelli non pertinenti."
 )
 
 
+def _response_schema() -> dict:
+    return {
+        "type": "object",
+        "properties": {
+            "azione": {
+                "type": "string",
+                "enum": ["registra_spesa", "correggi_ultima", "non_pertinente"],
+            },
+            "descrizione": {"type": "string"},
+            "importo": {"type": "number"},
+            "categoria": {"type": "string", "enum": _EXPENSE_CATEGORIES},
+            "campo_correzione": {
+                "type": "string",
+                "enum": ["importo", "categoria", "descrizione", _NO_FIELD],
+            },
+            "nuovo_testo": {"type": "string"},
+            "nuovo_numero": {"type": "number"},
+        },
+        "required": [
+            "azione", "descrizione", "importo", "categoria",
+            "campo_correzione", "nuovo_testo", "nuovo_numero",
+        ],
+        "propertyOrdering": [
+            "azione", "descrizione", "importo", "categoria",
+            "campo_correzione", "nuovo_testo", "nuovo_numero",
+        ],
+    }
+
+
 def _interpret(text: str, last_tx: dict | None) -> dict:
-    """Ritorna {'tool': <nome>, 'input': {...}} oppure {'tool': 'errore', ...}."""
+    """Ritorna {'tool': <nome>, 'input': {...}} oppure {'tool': 'errore', ...}.
+
+    I nomi 'tool' nel valore di ritorno sono storici (prima si usava il
+    function-calling): il resto del modulo li usa come chiavi di dispatch.
+    """
     try:
-        import anthropic
+        from google import genai
+        from google.genai import types
     except ImportError:
-        return {"tool": "errore", "messaggio": "SDK anthropic non installato sul server."}
+        return {"tool": "errore", "messaggio": "SDK google-genai non installato sul server."}
 
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        return {"tool": "errore", "messaggio": "ANTHROPIC_API_KEY non impostata sul server."}
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return {"tool": "errore", "messaggio": "GEMINI_API_KEY non impostata sul server."}
 
-    tools = [t for t in _TOOLS if t["name"] != "correggi_ultima" or last_tx]
     user_content = text
     if last_tx:
         user_content = (
@@ -242,28 +225,48 @@ def _interpret(text: str, last_tx: dict | None) -> dict:
         )
 
     try:
-        client = anthropic.Anthropic()
-        resp = client.messages.create(
+        client = genai.Client(api_key=api_key)
+        resp = client.models.generate_content(
             model=PARSER_MODEL,
-            max_tokens=1024,
-            system=_SYSTEM_PROMPT,
-            tools=tools,
-            # `auto` (non `any`): compatibile con ogni modello, incluse le
-            # famiglie che rifiutano il tool_choice forzato. Con 3 strumenti che
-            # coprono tutti i casi e il system prompt, il modello ne sceglie
-            # sempre uno.
-            tool_choice={"type": "auto"},
-            messages=[{"role": "user", "content": user_content}],
+            contents=user_content,
+            config=types.GenerateContentConfig(
+                system_instruction=_SYSTEM_PROMPT,
+                temperature=0,
+                response_mime_type="application/json",
+                response_schema=_response_schema(),
+            ),
         )
-    except anthropic.APIError as e:
-        return {"tool": "errore", "messaggio": f"Errore Claude: {e}"}
+        data = json.loads(resp.text)
+    except Exception as e:  # google.genai.errors.APIError, JSON non valido, ...
+        return {"tool": "errore", "messaggio": f"Errore Gemini: {e}"}
 
-    for block in resp.content:
-        if block.type == "tool_use":
-            # Gli input dei tool possono arrivare con escaping JSON particolare:
-            # affidarsi a block.input (già deserializzato dall'SDK).
-            return {"tool": block.name, "input": dict(block.input)}
-    return {"tool": "non_pertinente", "input": {"motivo": "nessuno strumento scelto"}}
+    azione = data.get("azione")
+
+    if azione == "registra_spesa":
+        return {
+            "tool": "registra_spesa",
+            "input": {
+                "descrizione": data.get("descrizione", ""),
+                "importo": data.get("importo", 0),
+                "categoria": data.get("categoria", ""),
+            },
+        }
+
+    if azione == "correggi_ultima" and last_tx:
+        campo = data.get("campo_correzione")
+        if campo not in ("importo", "categoria", "descrizione"):
+            return {"tool": "non_pertinente", "input": {"motivo": "correzione senza campo"}}
+        return {
+            "tool": "correggi_ultima",
+            "input": {
+                "campo": campo,
+                "nuovo_importo": data.get("nuovo_numero", 0),
+                "nuova_categoria": data.get("nuovo_testo", "") if campo == "categoria" else "",
+                "nuova_descrizione": data.get("nuovo_testo", "") if campo == "descrizione" else "",
+            },
+        }
+
+    return {"tool": "non_pertinente", "input": {"motivo": "non è una spesa"}}
 
 
 # ─── Comandi ────────────────────────────────────────────────────────────────

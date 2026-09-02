@@ -247,8 +247,12 @@
     }
   });
 
+  // Tutte le categorie di spesa, non solo quelle con storico o budget già
+  // impostato — così se ne può impostare il budget anche per categorie mai
+  // usate finora. Ordinate per media storica decrescente (quelle senza storico
+  // restano in fondo).
   let budgetCatKeys = $derived(
-    spendableCategories.filter((c) => (catAverages[c] || 0) > 0 || (budgetCats[c] || 0) > 0)
+    [...spendableCategories].sort((a, b) => (catAverages[b] || 0) - (catAverages[a] || 0))
   );
   let budgetCatTotal = $derived(Object.values(budgetCats).reduce((s, v) => s + (Number(v) || 0), 0));
   let budgetDiff = $derived(budgetCatTotal - budgetTotal);

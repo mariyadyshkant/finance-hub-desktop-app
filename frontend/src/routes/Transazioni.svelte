@@ -8,6 +8,11 @@
   let categories = $state([]);
   let colors = $state({});
   let selectedMonth = $state("");
+
+  // Spese pianificate: non compaiono nella lista, ma il loro totale è affiancato
+  // al "Totale spese" del mese selezionato.
+  let plannedExpenses = $state([]);
+  let plannedOverrides = $state({});
   let search = $state("");
   let categoryFilter = $state([]);
   let typeFilter = $state("tutto");
@@ -27,7 +32,27 @@
       colors = c.colors;
       if (!addCategory && categories.length) addCategory = categories[0];
     });
+    // Il selettore mese resta vuoto finché non se ne carica l'elenco: senza
+    // questa chiamata i mesi comparivano solo dopo aver aggiunto una transazione
+    // (unico altro punto che popola `months`).
+    api.get("/transactions/months").then((m) => (months = m)).catch(() => {});
+    api.get("/planning/planned-expenses").then((p) => (plannedExpenses = p)).catch(() => {});
   });
+
+  $effect(() => {
+    if (!selectedMonth) {
+      plannedOverrides = {};
+      return;
+    }
+    api
+      .get(`/planning/overrides/${selectedMonth}`)
+      .then((o) => (plannedOverrides = o))
+      .catch(() => (plannedOverrides = {}));
+  });
+
+  let plannedTotal = $derived(
+    plannedExpenses.reduce((s, p) => s + (plannedOverrides[p.id]?.amount ?? p.amount), 0)
+  );
 
   async function loadTransactions() {
     try {
@@ -156,7 +181,13 @@
           <div class="stat-icon"><Icon name="trending-down" size={14} /></div>
         </div>
         <span class="stat-value">€{totalSpese.toFixed(2)}</span>
-        <span class="stat-caption">nel periodo selezionato</span>
+        {#if selectedMonth && plannedTotal > 0}
+          <span class="stat-caption">
+            + €{plannedTotal.toFixed(2)} pianificate → <strong>€{(totalSpese + plannedTotal).toFixed(2)}</strong> con pianificate
+          </span>
+        {:else}
+          <span class="stat-caption">nel periodo selezionato</span>
+        {/if}
       </div>
       <div class="stat-card">
         <div class="stat-head">

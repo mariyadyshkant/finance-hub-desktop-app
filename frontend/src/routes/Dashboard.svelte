@@ -16,6 +16,11 @@
   let selectedMonth = $state("");
   let error = $state("");
 
+  // Spese pianificate (lista base + override del mese) — non entrano nella
+  // lista transazioni, ma vanno conteggiate accanto al totale speso del mese.
+  let plannedExpenses = $state([]);
+  let plannedOverrides = $state({});
+
   let showImport = $state(false);
   let importRecords = $state([]);
   let importError = $state("");
@@ -42,16 +47,18 @@
 
   async function loadAll() {
     try {
-      const [tx, summaries, rMonths, nMonths] = await Promise.all([
+      const [tx, summaries, rMonths, nMonths, planned] = await Promise.all([
         api.get("/transactions"),
         api.get("/summaries"),
         api.get("/transactions/months"),
         api.get("/summaries/months"),
+        api.get("/planning/planned-expenses"),
       ]);
       allTx = tx;
       notionSummaries = summaries;
       revolutMonths = rMonths;
       notionMonths = nMonths;
+      plannedExpenses = planned;
       error = "";
       if (!selectedMonth) {
         const all = Array.from(new Set([...rMonths, ...nMonths])).sort().reverse();
@@ -68,6 +75,14 @@
       colors = c.colors;
     });
     loadAll();
+  });
+
+  $effect(() => {
+    if (!selectedMonth) return;
+    api
+      .get(`/planning/overrides/${selectedMonth}`)
+      .then((o) => (plannedOverrides = o))
+      .catch(() => (plannedOverrides = {}));
   });
 
   let allMonths = $derived(
@@ -106,6 +121,11 @@
   );
   let saldo = $derived(totEntrate - totSpese);
   let senzaAffitto = $derived(totSpese - AFFITTO);
+
+  let plannedTotal = $derived(
+    plannedExpenses.reduce((s, p) => s + (plannedOverrides[p.id]?.amount ?? p.amount), 0)
+  );
+  let totSpeseConPianificate = $derived(totSpese + plannedTotal);
 
   let categoryBreakdown = $derived.by(() => {
     const byCat = {};
@@ -377,6 +397,11 @@
       <div class="metric-card">
         <span class="eyebrow">Totale spese</span>
         <span class="kpi-value negative">−€{totSpese.toFixed(2)}</span>
+        {#if plannedTotal > 0}
+          <span class="kpi-addon">
+            + €{plannedTotal.toFixed(2)} pianificate → <strong>€{totSpeseConPianificate.toFixed(2)}</strong> con pianificate
+          </span>
+        {/if}
       </div>
       <div class="metric-card">
         <span class="eyebrow">Entrate</span>
@@ -549,6 +574,15 @@
 
   .kpi-value.negative { color: var(--danger); }
   .kpi-value.positive { color: var(--success); }
+
+  .kpi-addon {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+  }
+
+  .kpi-addon strong {
+    color: var(--text-secondary);
+  }
 
   .charts-row {
     display: grid;

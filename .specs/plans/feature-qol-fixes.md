@@ -23,10 +23,19 @@ Quattro sistemazioni segnalate dall'utente sull'app desktop:
 
 ## Output atteso
 
-- **Dashboard** e **Transazioni**: sotto/accanto al "Totale spese" del mese
-  selezionato compare `+ €X pianificate → €Y con pianificate` quando ci sono
-  spese pianificate (override del mese inclusi). La lista transazioni non
-  cambia.
+- **Dashboard**: il "Totale spese" del mese *è* transazioni + spese pianificate
+  del mese (override inclusi), con sotto `€X transazioni + €Y pianificate`. Quel
+  totale combinato alimenta tutti i calcoli e i grafici del mese selezionato
+  (Saldo, Senza affitto, "Spese per categoria", "Confronto ultimi mesi",
+  "Andamento per categoria", "Media mensile per categoria") — **tranne**
+  l'andamento giornaliero (le pianificate non hanno una data). Le pianificate
+  entrano solo nel mese selezionato, non retroattivamente negli altri mesi dei
+  grafici di confronto. Rimosso `AFFITTO = 280`: "Senza affitto" = totale
+  combinato meno tutto ciò che è in categoria "Affitto" quel mese (transazioni
+  + pianificate), mostrato con `−` davanti. La lista transazioni non cambia.
+- **Transazioni**: accanto al "Totale spese" del mese compare
+  `+ €X pianificate → €Y con pianificate` (il totale in cima resta la somma
+  delle sole transazioni filtrate).
 - **Transazioni**: il selettore mese si popola all'apertura della pagina
   (`GET /transactions/months` in `$effect`, prima chiamato solo dopo un
   inserimento).
@@ -54,12 +63,17 @@ Quattro sistemazioni segnalate dall'utente sull'app desktop:
   DB (stessa forma di risposta), `init_categories()` in startup, router
   registrato. Rimosso l'import ora inutile di `CATEGORIES`/`CAT_COLORS` in
   `main.py`.
-- Frontend: `Dashboard.svelte` e `Transazioni.svelte` caricano
-  `/planning/planned-expenses` + `/planning/overrides/{mese}` e mostrano il
-  totale pianificato accanto al totale spese. `Transazioni.svelte` carica i
-  mesi all'apertura. `Pianificazione.svelte`: `budgetCatKeys` = tutte le
-  categorie di spesa ordinate per media. `Impostazioni.svelte`: nuova card
-  "Categorie" (CRUD completo).
+- Frontend: `Dashboard.svelte` inietta le spese pianificate del mese in
+  `rowsWithPlanned` (righe unificate + pianificate), da cui derivano `totSpese`,
+  `saldo`, `senzaAffitto`, `categoryBreakdown`, `monthlyTotals`,
+  `trendChartData`, `avgVsMonth` — l'andamento giornaliero resta su `allTx`.
+  Rimosso `AFFITTO = 280`, `senzaAffitto = totSpese − somma categoria Affitto`.
+  `Transazioni.svelte` carica `/planning/planned-expenses` +
+  `/planning/overrides/{mese}` e mostra il totale pianificato accanto (senza
+  fonderlo nel totale in cima), e carica i mesi all'apertura.
+  `Pianificazione.svelte`: `budgetCatKeys` = tutte le categorie di spesa
+  ordinate per media. `Impostazioni.svelte`: nuova card "Categorie" (CRUD
+  completo).
 - Verifica: `npm run build` frontend OK; due script di test backend su SQLite
   temporanea (CRUD + cascata rinomina/elimina su transazioni, riepiloghi,
   pianificate, `monthly_budgets` JSON; casi 404/409/400) — tutti verdi; smoke
@@ -70,5 +84,7 @@ Quattro sistemazioni segnalate dall'utente sull'app desktop:
   ora").
 - Rendere `categorize()` consapevole delle categorie rinominate/eliminate — per
   un'app mono-utente il costo non vale il beneficio; documentato in ADR.
-- `plannedTotal` non entra in "Saldo" / "Senza affitto": la richiesta era solo
-  sul "Totale speso".
+- (revisione 2026-09-02, stessa sessione) su richiesta dell'utente il totale
+  combinato entra ovunque nella Dashboard tranne l'andamento giornaliero, e
+  "Senza affitto" ora sottrae la categoria "Affitto" reale invece del vecchio
+  valore fisso di 280.

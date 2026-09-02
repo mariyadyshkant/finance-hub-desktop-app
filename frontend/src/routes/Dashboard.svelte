@@ -4,7 +4,6 @@
   import Chart from "../lib/components/Chart.svelte";
   import { CHART_COLORS, baseScales } from "../lib/chartTheme.js";
 
-  const AFFITTO = 280;
   const NON_SPESA = ["Entrata", "Rimborso ricevuto", "Altro"];
 
   let allTx = $state([]);
@@ -109,7 +108,29 @@
     return rows;
   });
 
-  let monthRows = $derived(unifiedRows.filter((r) => r.month === selectedMonth));
+  // Le spese pianificate del mese selezionato, nella stessa forma delle righe
+  // unificate — così entrano in ogni calcolo e grafico del mese (tranne
+  // l'andamento giornaliero, che non hanno una data). Rappresentano spesa
+  // attesa non ancora a estratto conto: si sommano solo al mese selezionato,
+  // non retroattivamente agli altri mesi del confronto.
+  let plannedMonthRows = $derived(
+    selectedMonth
+      ? plannedExpenses.map((p) => ({
+          month: selectedMonth,
+          category: p.category,
+          amount: plannedOverrides[p.id]?.amount ?? p.amount,
+          source: "planned",
+        }))
+      : []
+  );
+  let plannedTotal = $derived(plannedMonthRows.reduce((s, r) => s + r.amount, 0));
+
+  let rowsWithPlanned = $derived([...unifiedRows, ...plannedMonthRows]);
+
+  let monthRows = $derived(rowsWithPlanned.filter((r) => r.month === selectedMonth));
+  let txSpese = $derived(
+    monthRows.filter((r) => r.source !== "planned").reduce((s, r) => s + r.amount, 0)
+  );
   let totSpese = $derived(monthRows.reduce((s, r) => s + r.amount, 0));
   let isRevolutMonth = $derived(revolutMonths.includes(selectedMonth));
   let totEntrate = $derived(
@@ -120,12 +141,10 @@
       : 0
   );
   let saldo = $derived(totEntrate - totSpese);
-  let senzaAffitto = $derived(totSpese - AFFITTO);
-
-  let plannedTotal = $derived(
-    plannedExpenses.reduce((s, p) => s + (plannedOverrides[p.id]?.amount ?? p.amount), 0)
+  let affittoMese = $derived(
+    monthRows.filter((r) => r.category === "Affitto").reduce((s, r) => s + r.amount, 0)
   );
-  let totSpeseConPianificate = $derived(totSpese + plannedTotal);
+  let senzaAffitto = $derived(totSpese - affittoMese);
 
   let categoryBreakdown = $derived.by(() => {
     const byCat = {};
@@ -195,7 +214,7 @@
 
   let monthlyTotals = $derived.by(() => {
     const byMonth = {};
-    for (const r of unifiedRows) byMonth[r.month] = (byMonth[r.month] || 0) + r.amount;
+    for (const r of rowsWithPlanned) byMonth[r.month] = (byMonth[r.month] || 0) + r.amount;
     return Object.entries(byMonth).sort((a, b) => a[0].localeCompare(b[0]));
   });
 
@@ -234,7 +253,7 @@
     const monthsSorted = allMonths.slice().sort();
     const datasets = trendCategories.map((cat) => {
       const byMonth = {};
-      for (const r of unifiedRows) {
+      for (const r of rowsWithPlanned) {
         if (r.category === cat) byMonth[r.month] = (byMonth[r.month] || 0) + r.amount;
       }
       const color = colors[cat] || CHART_COLORS.accent;
@@ -261,7 +280,7 @@
   let avgVsMonth = $derived.by(() => {
     const n = allMonths.length || 1;
     const byCat = {};
-    for (const r of unifiedRows) {
+    for (const r of rowsWithPlanned) {
       byCat[r.category] = byCat[r.category] || {};
       byCat[r.category][r.month] = (byCat[r.category][r.month] || 0) + r.amount;
     }
@@ -399,7 +418,7 @@
         <span class="kpi-value negative">−€{totSpese.toFixed(2)}</span>
         {#if plannedTotal > 0}
           <span class="kpi-addon">
-            + €{plannedTotal.toFixed(2)} pianificate → <strong>€{totSpeseConPianificate.toFixed(2)}</strong> con pianificate
+            €{txSpese.toFixed(2)} transazioni + €{plannedTotal.toFixed(2)} pianificate
           </span>
         {/if}
       </div>
@@ -417,7 +436,7 @@
       </div>
       <div class="metric-card">
         <span class="eyebrow">Senza affitto</span>
-        <span class="kpi-value">€{senzaAffitto.toFixed(2)}</span>
+        <span class="kpi-value negative">−€{senzaAffitto.toFixed(2)}</span>
       </div>
     </div>
 
@@ -578,10 +597,6 @@
   .kpi-addon {
     font-size: var(--text-xs);
     color: var(--text-muted);
-  }
-
-  .kpi-addon strong {
-    color: var(--text-secondary);
   }
 
   .charts-row {

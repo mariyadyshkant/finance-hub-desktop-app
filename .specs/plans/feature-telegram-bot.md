@@ -22,7 +22,7 @@ database Turso già usato da desktop e backend hosted.
 - Chiamate alla Bot API di Telegram con `requests` (no `python-telegram-bot`).
 - Parsing dei messaggi con **Gemini Flash** (SDK `google-genai`), structured
   output JSON con schema imposto. Modello configurabile via
-  `TELEGRAM_PARSER_MODEL` (default `gemini-2.5-flash`; `gemini-2.5-flash-lite`
+  `TELEGRAM_PARSER_MODEL` (default `gemini-3.6-flash`; `gemini-3.6-flash-lite`
   più leggero). Chiave gratuita da Google AI Studio (`GEMINI_API_KEY`).
   - Prima iterazione fatta con Claude (`anthropic`, function-calling):
     abbandonata quando l'utente ha realizzato che l'API Anthropic è a consumo

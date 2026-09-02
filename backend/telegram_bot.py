@@ -31,12 +31,13 @@ from importers.helpers import CATEGORIES
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 ALLOWED_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
-# Modello Gemini per il parsing. `gemini-2.5-flash` è nel piano gratuito ed è
-# abbondante per estrarre importo/descrizione/categoria da una frase.
-# `gemini-2.5-flash-lite` è ancora più leggero. Override senza toccare il codice.
-# `or` e non il default di getenv: la env var può essere presente ma vuota
-# (riga `TELEGRAM_PARSER_MODEL=` in .env o secret vuoto).
-PARSER_MODEL = os.getenv("TELEGRAM_PARSER_MODEL") or "gemini-2.5-flash"
+# Modello Gemini per il parsing: abbondante per estrarre importo/descrizione/
+# categoria da una frase. Google ritira i modelli vecchi in fretta (i `2.5-*`
+# non sono più disponibili ai nuovi progetti da set. 2026) — se l'API risponde
+# 404 dicendo di aggiornare, mettere il nome suggerito in TELEGRAM_PARSER_MODEL
+# (secret Fly) senza aspettare una modifica al codice.
+# `or` e non il default di getenv: la env var può essere presente ma vuota.
+PARSER_MODEL = os.getenv("TELEGRAM_PARSER_MODEL") or "gemini-3.6-flash"
 
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 

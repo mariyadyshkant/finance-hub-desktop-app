@@ -74,13 +74,11 @@ categoria "Bar & Ristoranti" in Turso, visibile subito nell'app desktop.
 
 [x] Codice scritto e testato in locale (import, round-trip DB con RETURNING id,
     webhook + esenzione middleware via TestClient, formattazione comandi,
-    costruzione del config Gemini con lo schema). Parsing Gemini non ancora
-    verificato dal vivo (serve `GEMINI_API_KEY`).
+    costruzione del config Gemini con lo schema).
 [x] Bot creato su @BotFather, deploy su Fly.io fatto, webhook registrato
-    (`getWebhookInfo` OK, 0 pending, nessun errore). Catena Telegram → webhook
-    → bot → LLM verificata (l'errore che si vedeva era solo la chiave LLM).
-[~] Swap Claude → Gemini in corso: serve `fly secrets set GEMINI_API_KEY=...`
-    + `fly deploy` (requirements cambiati: `anthropic` → `google-genai`).
-    Rimuovere il vecchio secret: `fly secrets unset ANTHROPIC_API_KEY`.
-[ ] Verifica end-to-end da telefono con Gemini
+    (`getWebhookInfo` OK, 0 pending, nessun errore).
+[x] Swap Claude → Gemini fatto e deployato. `gemini-2.5-flash` era già ritirato
+    per i progetti nuovi → default portato a `gemini-3.6-flash` (nome suggerito
+    dall'API stessa nel 404).
+[x] Verifica end-to-end da telefono con Gemini: OK, spesa registrata.
 [ ] Merge in `dev`

@@ -84,6 +84,7 @@ def get_categories():
     return {
         "categories": [c["name"] for c in cats],
         "colors": {c["name"]: c["color"] for c in cats},
+        "icons": {c["name"]: c["icon"] for c in cats},
     }
 
 

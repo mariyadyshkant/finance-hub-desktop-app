@@ -11,11 +11,13 @@ router = APIRouter()
 class CategoryIn(BaseModel):
     name: str
     color: str = "#0e7490"
+    icon: str = "repeat"
 
 
 class CategoryUpdate(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
+    icon: Optional[str] = None
 
 
 def _names():
@@ -29,7 +31,7 @@ def create_category(c: CategoryIn):
         raise HTTPException(status_code=400, detail="Il nome non può essere vuoto")
     if name in _names():
         raise HTTPException(status_code=409, detail=f"La categoria «{name}» esiste già")
-    db.add_category(name, c.color.strip() or "#0e7490")
+    db.add_category(name, c.color.strip() or "#0e7490", c.icon.strip() or "repeat")
     return {"ok": True}
 
 
@@ -41,6 +43,9 @@ def update_category(name: str, c: CategoryUpdate):
 
     if c.color is not None and c.color.strip():
         db.set_category_color(name, c.color.strip())
+
+    if c.icon is not None and c.icon.strip():
+        db.set_category_icon(name, c.icon.strip())
 
     if c.name is not None:
         new_name = c.name.strip()

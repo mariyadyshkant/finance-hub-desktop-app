@@ -546,18 +546,35 @@ def init_categories():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
             color TEXT NOT NULL DEFAULT '#0e7490',
+            icon TEXT NOT NULL DEFAULT 'repeat',
             position INTEGER NOT NULL DEFAULT 0,
             is_default INTEGER NOT NULL DEFAULT 0
         )
     """)
     conn.commit()
+    # Migrazione per i DB creati prima dell'aggiunta della colonna `icon`.
+    try:
+        conn.execute("ALTER TABLE categories ADD COLUMN icon TEXT NOT NULL DEFAULT 'repeat'")
+        conn.commit()
+    except Exception:
+        pass  # colonna già presente
+
+    from importers.helpers import CATEGORIES, CAT_COLORS, CAT_ICONS
     cur = conn.execute("SELECT COUNT(*) FROM categories")
     if cur.fetchone()[0] == 0:
-        from importers.helpers import CATEGORIES, CAT_COLORS
         for i, name in enumerate(CATEGORIES):
             conn.execute(
-                "INSERT INTO categories (name, color, position, is_default) VALUES (?,?,?,1)",
-                (name, CAT_COLORS.get(name, "#0e7490"), i),
+                "INSERT INTO categories (name, color, icon, position, is_default) VALUES (?,?,?,?,1)",
+                (name, CAT_COLORS.get(name, "#0e7490"), CAT_ICONS.get(name, "repeat"), i),
+            )
+        conn.commit()
+    else:
+        # DB migrato: assegna le icone di default a quelle categorie di default
+        # ancora sul valore iniziale 'repeat' (non tocca quelle personalizzate).
+        for name, ic in CAT_ICONS.items():
+            conn.execute(
+                "UPDATE categories SET icon=? WHERE name=? AND is_default=1 AND icon='repeat'",
+                (ic, name),
             )
         conn.commit()
     _close(conn)
@@ -565,19 +582,19 @@ def init_categories():
 def get_categories():
     conn = get_conn()
     cur = conn.execute(
-        "SELECT name, color, is_default FROM categories ORDER BY position, id"
+        "SELECT name, color, icon, is_default FROM categories ORDER BY position, id"
     )
     rows = _rows_to_dicts(cur, cur.fetchall())
     _close(conn)
     return rows
 
-def add_category(name, color):
+def add_category(name, color, icon="repeat"):
     conn = get_conn()
     cur = conn.execute("SELECT COALESCE(MAX(position), 0) + 1 FROM categories")
     pos = cur.fetchone()[0]
     conn.execute(
-        "INSERT INTO categories (name, color, position, is_default) VALUES (?,?,?,0)",
-        (name, color, pos),
+        "INSERT INTO categories (name, color, icon, position, is_default) VALUES (?,?,?,?,0)",
+        (name, color, icon, pos),
     )
     conn.commit()
     _close(conn)
@@ -585,6 +602,12 @@ def add_category(name, color):
 def set_category_color(name, color):
     conn = get_conn()
     conn.execute("UPDATE categories SET color=? WHERE name=?", (color, name))
+    conn.commit()
+    _close(conn)
+
+def set_category_icon(name, icon):
+    conn = get_conn()
+    conn.execute("UPDATE categories SET icon=? WHERE name=?", (icon, name))
     conn.commit()
     _close(conn)
 

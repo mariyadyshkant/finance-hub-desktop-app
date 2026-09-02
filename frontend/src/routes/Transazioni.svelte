@@ -7,6 +7,7 @@
   let months = $state([]);
   let categories = $state([]);
   let colors = $state({});
+  let icons = $state({});
   let selectedMonth = $state("");
 
   // Spese pianificate: non compaiono nella lista, ma il loro totale è affiancato
@@ -30,6 +31,7 @@
     api.get("/categories").then((c) => {
       categories = c.categories;
       colors = c.colors;
+      icons = c.icons || {};
       if (!addCategory && categories.length) addCategory = categories[0];
     });
     // Il selettore mese resta vuoto finché non se ne carica l'elenco: senza
@@ -236,7 +238,7 @@
           <div class="th-actions"></div>
         </div>
         {#each filtered as tx (tx.id)}
-          <TransactionRow {tx} {categories} {colors} onchange={loadTransactions} />
+          <TransactionRow {tx} {categories} {colors} {icons} onchange={loadTransactions} />
         {/each}
       {/if}
     </div>

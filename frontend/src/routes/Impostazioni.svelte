@@ -1,6 +1,9 @@
 <script>
   import { api } from "../lib/api.js";
   import Icon from "../lib/components/Icon.svelte";
+  import { ICONS } from "../lib/icons.js";
+
+  const ICON_NAMES = Object.keys(ICONS);
 
   let displayName = $state("");
   let splitwiseConfigured = $state(false);
@@ -14,13 +17,17 @@
   let splitwiseError = $state("");
 
   // ─── Categorie ────────────────────────────────────────────────────────────
-  let cats = $state([]); // [{ name, color }]
+  let cats = $state([]); // [{ name, color, icon }]
   let catError = $state("");
   let newCatName = $state("");
   let newCatColor = $state("#0e7490");
+  let newCatIcon = $state("repeat");
+  let newIconPickerOpen = $state(false);
   let editingCat = $state(null); // nome originale in modifica
   let editCatName = $state("");
   let editCatColor = $state("");
+  let editCatIcon = $state("repeat");
+  let editIconPickerOpen = $state(false);
   let deletingCat = $state(null); // nome in attesa di conferma eliminazione
   let reassignTo = $state("");
 
@@ -29,7 +36,11 @@
       const [s, c] = await Promise.all([api.get("/settings"), api.get("/categories")]);
       displayName = s.display_name || "";
       splitwiseConfigured = s.splitwise_configured;
-      cats = c.categories.map((n) => ({ name: n, color: c.colors[n] || "#0e7490" }));
+      cats = c.categories.map((n) => ({
+        name: n,
+        color: c.colors[n] || "#0e7490",
+        icon: (c.icons && c.icons[n]) || "repeat",
+      }));
       error = "";
     } catch (e) {
       error = e.message;
@@ -43,9 +54,15 @@
       return;
     }
     try {
-      await api.post("/categories", { name: newCatName.trim(), color: newCatColor });
+      await api.post("/categories", {
+        name: newCatName.trim(),
+        color: newCatColor,
+        icon: newCatIcon,
+      });
       newCatName = "";
       newCatColor = "#0e7490";
+      newCatIcon = "repeat";
+      newIconPickerOpen = false;
       catError = "";
       await load();
     } catch (e2) {
@@ -57,6 +74,8 @@
     editingCat = c.name;
     editCatName = c.name;
     editCatColor = c.color;
+    editCatIcon = c.icon;
+    editIconPickerOpen = false;
     deletingCat = null;
   }
 
@@ -65,6 +84,7 @@
       await api.put(`/categories/${encodeURIComponent(orig)}`, {
         name: editCatName.trim(),
         color: editCatColor,
+        icon: editCatIcon,
       });
       editingCat = null;
       catError = "";
@@ -203,12 +223,41 @@
         {#each cats as c (c.name)}
           {#if editingCat === c.name}
             <div class="cat-row editing">
-              <input type="color" bind:value={editCatColor} class="swatch" />
-              <input type="text" bind:value={editCatName} class="cat-name-input" />
-              <button class="btn-primary sm" onclick={() => saveCat(c.name)}>
-                <Icon name="check" size={14} /> Salva
-              </button>
-              <button class="btn-secondary sm" onclick={() => (editingCat = null)}>Annulla</button>
+              <div class="cat-row-main">
+                <input type="color" bind:value={editCatColor} class="swatch" title="Colore" />
+                <button
+                  type="button"
+                  class="icon-preview"
+                  style="color:{editCatColor}"
+                  title="Cambia icona"
+                  onclick={() => (editIconPickerOpen = !editIconPickerOpen)}
+                >
+                  <Icon name={editCatIcon} size={16} />
+                </button>
+                <input type="text" bind:value={editCatName} class="cat-name-input" />
+                <button class="btn-primary sm" onclick={() => saveCat(c.name)}>
+                  <Icon name="check" size={14} /> Salva
+                </button>
+                <button class="btn-secondary sm" onclick={() => (editingCat = null)}>Annulla</button>
+              </div>
+              {#if editIconPickerOpen}
+                <div class="icon-grid">
+                  {#each ICON_NAMES as ic}
+                    <button
+                      type="button"
+                      class="icon-choice"
+                      class:selected={editCatIcon === ic}
+                      title={ic}
+                      onclick={() => {
+                        editCatIcon = ic;
+                        editIconPickerOpen = false;
+                      }}
+                    >
+                      <Icon name={ic} size={16} />
+                    </button>
+                  {/each}
+                </div>
+              {/if}
             </div>
           {:else if deletingCat === c.name}
             <div class="cat-row deleting">
@@ -226,6 +275,9 @@
             </div>
           {:else}
             <div class="cat-row">
+              <span class="icon-preview static" style="color:{c.color}">
+                <Icon name={c.icon} size={16} />
+              </span>
               <span class="swatch static" style="background:{c.color}"></span>
               <span class="cat-name">{c.name}</span>
               <button class="icon-btn" title="Modifica" onclick={() => startEditCat(c)}>
@@ -245,9 +297,38 @@
       </div>
 
       <form class="cat-add" onsubmit={addCat}>
-        <input type="color" bind:value={newCatColor} class="swatch" />
-        <input type="text" bind:value={newCatName} placeholder="Nuova categoria" />
-        <button type="submit" class="btn-primary sm"><Icon name="plus" size={14} /> Aggiungi</button>
+        <div class="cat-row-main">
+          <input type="color" bind:value={newCatColor} class="swatch" title="Colore" />
+          <button
+            type="button"
+            class="icon-preview"
+            style="color:{newCatColor}"
+            title="Scegli icona"
+            onclick={() => (newIconPickerOpen = !newIconPickerOpen)}
+          >
+            <Icon name={newCatIcon} size={16} />
+          </button>
+          <input type="text" bind:value={newCatName} placeholder="Nuova categoria" />
+          <button type="submit" class="btn-primary sm"><Icon name="plus" size={14} /> Aggiungi</button>
+        </div>
+        {#if newIconPickerOpen}
+          <div class="icon-grid">
+            {#each ICON_NAMES as ic}
+              <button
+                type="button"
+                class="icon-choice"
+                class:selected={newCatIcon === ic}
+                title={ic}
+                onclick={() => {
+                  newCatIcon = ic;
+                  newIconPickerOpen = false;
+                }}
+              >
+                <Icon name={ic} size={16} />
+              </button>
+            {/each}
+          </div>
+        {/if}
       </form>
       {#if catError}<p class="error">{catError}</p>{/if}
     </div>
@@ -384,9 +465,77 @@
     border-bottom: none;
   }
 
+  .cat-row.editing {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+
+  .cat-row-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
   .cat-name {
     flex: 1;
     color: var(--text-primary);
+  }
+
+  .icon-preview {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .icon-preview.static {
+    border-color: transparent;
+    background: none;
+    cursor: default;
+  }
+
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+    gap: 4px;
+    max-height: 132px;
+    overflow-y: auto;
+    padding: var(--space-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--input-bg);
+  }
+
+  .icon-choice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .icon-choice:hover {
+    background: var(--muted);
+    color: var(--accent);
+  }
+
+  .icon-choice.selected {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--muted);
   }
 
   .swatch {
@@ -421,10 +570,9 @@
 
   .cat-add {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: var(--space-2);
     margin-top: var(--space-3);
-    flex-wrap: wrap;
   }
 
   .cat-add input[type="text"] {

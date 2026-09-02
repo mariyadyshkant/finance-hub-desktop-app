@@ -2,25 +2,7 @@
   import { api } from "../api.js";
   import Icon from "./Icon.svelte";
 
-  let { tx, categories, colors, onchange } = $props();
-
-  const CATEGORY_ICONS = {
-    "Bar & Ristoranti": "utensils",
-    Spesa: "shopping-bag",
-    Trasporti: "arrow-left-right",
-    Auto: "arrow-left-right",
-    Abbonamenti: "repeat",
-    Utenze: "repeat",
-    Affitto: "landmark",
-    Salute: "heart-pulse",
-    Persona: "user",
-    Svago: "shopping-bag",
-    Shopping: "shopping-bag",
-    Riparazioni: "repeat",
-    Sigarette: "shopping-bag",
-    Regali: "shopping-bag",
-    Vacanza: "plane",
-  };
+  let { tx, categories, colors, icons = {}, onchange } = $props();
 
   let action = $state("");
   let error = $state("");
@@ -46,7 +28,7 @@
 
   let isShared = $derived(tx.note && tx.note.toLowerCase().startsWith("condivisa"));
   let catColor = $derived(colors[tx.category] || "#6966a0");
-  let icon = $derived(CATEGORY_ICONS[tx.category] || "repeat");
+  let icon = $derived(icons[tx.category] || "repeat");
 
   function openAction(a) {
     error = "";

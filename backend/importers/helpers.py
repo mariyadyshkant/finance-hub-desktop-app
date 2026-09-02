@@ -51,6 +51,30 @@ CAT_COLORS = {
     "Altro":             "#0e7490",  # cyan-700
 }
 
+# Icona di default per categoria (nome icona in frontend/src/lib/icons.js).
+# Seed iniziale della colonna categories.icon: da qui in poi la si modifica
+# dall'app (pagina Impostazioni). Le categorie non elencate usano "repeat".
+CAT_ICONS = {
+    "Bar & Ristoranti":  "utensils",
+    "Spesa":             "shopping-bag",
+    "Trasporti":         "arrow-left-right",
+    "Auto":              "arrow-left-right",
+    "Abbonamenti":       "repeat",
+    "Utenze":            "repeat",
+    "Affitto":           "landmark",
+    "Salute":            "heart-pulse",
+    "Persona":           "user",
+    "Svago":             "shopping-bag",
+    "Shopping":          "shopping-bag",
+    "Riparazioni":       "repeat",
+    "Sigarette":         "shopping-bag",
+    "Regali":            "shopping-bag",
+    "Vacanza":           "plane",
+    "Entrata":           "trending-up",
+    "Rimborso ricevuto": "repeat",
+    "Altro":             "repeat",
+}
+
 def categorize(desc: str, amount: float) -> str:
     if amount > 0:
         return "Entrata"

@@ -42,10 +42,15 @@ Quattro sistemazioni segnalate dall'utente sull'app desktop:
 - **Pianificazione → Budget**: mostra *tutte* le categorie di spesa, ordinate
   per media storica decrescente (prima solo quelle con storico o budget già
   impostato).
-- **Impostazioni → Categorie**: lista con pallino colore + nome; aggiungi
-  (nome + color picker), rinomina, elimina (con `select` della categoria di
-  destinazione). Rinomina/elimina propagano a cascata sulle tabelle che
-  referenziano la categoria per nome.
+- **Impostazioni → Categorie**: lista con icona + pallino colore + nome;
+  aggiungi (nome + color picker + icon picker), rinomina, cambia colore, cambia
+  icona, elimina (con `select` della categoria di destinazione). Rinomina/elimina
+  propagano a cascata sulle tabelle che referenziano la categoria per nome.
+- **Icona per categoria**: nuova colonna `categories.icon` (nome icona di
+  `frontend/src/lib/icons.js`, default `repeat`, seed da `CAT_ICONS` in
+  `importers/helpers.py`). `GET /api/categories` restituisce anche `icons`.
+  `TransactionRow.svelte` usa la mappa `icons` dal backend invece della vecchia
+  `CATEGORY_ICONS` hardcoded.
 
 ## Status
 

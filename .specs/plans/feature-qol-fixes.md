@@ -59,6 +59,16 @@ Quattro sistemazioni segnalate dall'utente sull'app desktop:
   vincono), `PICKABLE_ICONS` e `iconMatches(name, query)`. Il selettore in
   Impostazioni ha una casella di ricerca che filtra su nome + parole chiave.
 
+- **Risparmi per conto** (2026-09-03): la pagina Risparmi ora ha una tab-bar
+  `Generale` + una tab per ogni valore distinto di `savings.label` (usato come
+  "conto / modalità"). Generale: saldo totale, elenco "Saldo per conto"
+  (cliccabile → apre la tab del conto), grafico con una linea di saldo
+  cumulativo per conto + linea totale tratteggiata. Tab conto: saldo del conto,
+  % sul totale, grafico ad area del suo cumulativo, storico filtrato. Il form
+  "Aggiungi movimento" ha un `datalist` dei conti esistenti e, se sei su una
+  tab conto, precompila l'etichetta. Nessuna modifica al backend
+  (`savings.label` già c'era).
+
 ## Status
 
 [x] Completata

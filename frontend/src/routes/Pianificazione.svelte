@@ -3,6 +3,7 @@
   import Icon from "../lib/components/Icon.svelte";
   import Chart from "../lib/components/Chart.svelte";
   import { CHART_COLORS, baseScales } from "../lib/chartTheme.js";
+  import { plannedApplies } from "../lib/planned.js";
 
   const NON_SPESA = ["Entrata", "Rimborso ricevuto", "Altro"];
 
@@ -305,7 +306,10 @@
   // ─── Tab: Consuntivo ──────────────────────────────────────────────────────
   let monthActualRows = $derived(unifiedRows.filter((r) => r.month === selectedMonth));
   let actualTotal = $derived(monthActualRows.reduce((s, r) => s + r.amount, 0));
-  let combinedTotal = $derived(actualTotal + totalPlanned);
+  // Le pianificate contano nel consuntivo solo per i mesi in cui la regola
+  // esisteva (da agosto 2026) — vedi lib/planned.js.
+  let consuntivoPlanned = $derived(plannedApplies(selectedMonth) ? totalPlanned : 0);
+  let combinedTotal = $derived(actualTotal + consuntivoPlanned);
   let remaining = $derived(budget ? budget.total - combinedTotal : 0);
   let pct = $derived(budget && budget.total > 0 ? (combinedTotal / budget.total) * 100 : 0);
   let barColor = $derived(pct <= 85 ? CHART_COLORS.success : pct <= 100 ? CHART_COLORS.textMuted : CHART_COLORS.danger);
@@ -544,7 +548,7 @@
         </div>
         <div class="metric-card">
           <span class="eyebrow">Pianificate</span>
-          <span class="kpi-value">€{totalPlanned.toFixed(2)}</span>
+          <span class="kpi-value">€{consuntivoPlanned.toFixed(2)}</span>
         </div>
         <div class="metric-card">
           <span class="eyebrow">Rimanente</span>

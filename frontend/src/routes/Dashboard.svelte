@@ -3,6 +3,7 @@
   import Icon from "../lib/components/Icon.svelte";
   import Chart from "../lib/components/Chart.svelte";
   import { CHART_COLORS, baseScales } from "../lib/chartTheme.js";
+  import { plannedApplies } from "../lib/planned.js";
 
   const NON_SPESA = ["Entrata", "Rimborso ricevuto", "Altro"];
 
@@ -114,7 +115,7 @@
   // attesa non ancora a estratto conto: si sommano solo al mese selezionato,
   // non retroattivamente agli altri mesi del confronto.
   let plannedMonthRows = $derived(
-    selectedMonth
+    plannedApplies(selectedMonth)
       ? plannedExpenses.map((p) => ({
           month: selectedMonth,
           category: p.category,

@@ -2,6 +2,7 @@
   import { api } from "../lib/api.js";
   import Icon from "../lib/components/Icon.svelte";
   import TransactionRow from "../lib/components/TransactionRow.svelte";
+  import { plannedApplies } from "../lib/planned.js";
 
   let transactions = $state([]);
   let months = $state([]);
@@ -183,7 +184,7 @@
           <div class="stat-icon"><Icon name="trending-down" size={14} /></div>
         </div>
         <span class="stat-value">€{totalSpese.toFixed(2)}</span>
-        {#if selectedMonth && plannedTotal > 0}
+        {#if plannedApplies(selectedMonth) && plannedTotal > 0}
           <span class="stat-caption">
             + €{plannedTotal.toFixed(2)} pianificate → <strong>€{(totalSpese + plannedTotal).toFixed(2)}</strong> con pianificate
           </span>

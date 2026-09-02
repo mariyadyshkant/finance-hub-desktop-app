@@ -100,3 +100,9 @@ Quattro sistemazioni segnalate dall'utente sull'app desktop:
   combinato entra ovunque nella Dashboard tranne l'andamento giornaliero, e
   "Senza affitto" ora sottrae la categoria "Affitto" reale invece del vecchio
   valore fisso di 280.
+- (revisione 2026-09-03) le spese pianificate contano solo per i mesi
+  `>= 2026-08` (`frontend/src/lib/planned.js` → `PLANNED_EXPENSES_FROM` /
+  `plannedApplies`). Per i mesi importati dalla vecchia web app (fino a luglio
+  2026) la regola non esisteva: sommarle mostrerebbe spese duplicate o mai
+  avvenute. Applicato in Dashboard (`plannedMonthRows`), Transazioni (didascalia
+  del totale) e Pianificazione → Consuntivo (`consuntivoPlanned`).

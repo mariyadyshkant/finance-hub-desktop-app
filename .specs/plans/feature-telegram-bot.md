@@ -36,12 +36,35 @@ database Turso già usato da desktop e backend hosted.
 ## Comandi
 
 - testo libero → registra spesa (importo negativo, `source='telegram'`) o
-  corregge l'ultima (`era 12 non 8`, `mettila in Svago`)
+  corregge l'ultima (`era 12 non 8`, `mettila in Svago`, `era di ieri`)
+- messaggio che inizia per `+` → registra un'**entrata** (`+50 stipendio`),
+  importo positivo, categoria `Entrata`/`Rimborso ricevuto`
+- data diversa da oggi in linguaggio naturale (`ieri 20 euro benzina`, `il 3
+  settembre 15 al cinema`) — Gemini la risolve rispetto a "oggi" (iniettato nel
+  prompt ad ogni chiamata) e la restituisce in `YYYY-MM-DD`, validata con
+  `date.fromisoformat` prima di scrivere
 - `/oggi` `/settimana` `/mese` — spese per categoria + totale
 - `/budget` — budget del mese (da `monthly_budgets`) vs speso
-- `/ultima` — ultima spesa registrata dal bot
+- `/ultima` — ultima registrazione (spesa o entrata) del bot
 - `/cancella` — cancella l'ultima
+- `/coda` — messaggi in attesa di essere ritentati
 - `/aiuto` `/start` — istruzioni
+
+## Coda dei messaggi (issue-telegram-2)
+
+Se `_interpret()` fallisce (rete, quota Gemini, modello ritirato — è già
+successo con `gemini-2.5-flash`) il messaggio **non viene scartato**: finisce
+in `telegram_pending` (tabella creata al volo da `telegram_bot.py`, non serve
+una migrazione a parte) e un task asyncio (`queue_worker_loop`, avviato da
+`main.py` — `asyncio.create_task` nello startup event, gira anche in sviluppo)
+lo ritenta ogni 60s (`_QUEUE_INTERVAL_S`) fino a `_QUEUE_MAX_ATTEMPTS` (8, poi
+l'utente viene avvisato e il messaggio scartato). Il primo fallimento avvisa
+subito l'utente ("⏳ ... l'ho messo in coda"); i ritentativi successivi sono
+silenziosi finché non c'è un esito (successo o scarto finale) — altrimenti un
+outage di qualche minuto significherebbe un messaggio "⏳" ogni minuto.
+`_interpret()` ha anche un timeout di 12s + 1 retry automatico lato SDK
+(`http_options`), per non tenere un thread del threadpool bloccato a
+oltranza su un problema di rete prima ancora di arrivare alla coda.
 
 ## File
 
@@ -81,4 +104,11 @@ categoria "Bar & Ristoranti" in Turso, visibile subito nell'app desktop.
     per i progetti nuovi → default portato a `gemini-3.6-flash` (nome suggerito
     dall'API stessa nel 404).
 [x] Verifica end-to-end da telefono con Gemini: OK, spesa registrata.
-[ ] Merge in `dev`
+[x] Merge in `dev`, poi fast-forward in `main` (issue-telegram-1)
+[x] issue-telegram-2: entrate con `+`, data personalizzabile (registrazione +
+    correzione), coda con retry automatico. Testato in locale con `_interpret`
+    monkeypatchata (round-trip entrata/spesa/data/correzione, coda:
+    fallimento→attempts++, successo→rimossa, max tentativi→scartata e
+    utente avvisato). Non verificato dal vivo contro Gemini reale.
+[ ] Deploy + verifica end-to-end di issue-telegram-2 da telefono
+[ ] Merge issue-telegram-2 in `dev`

@@ -9,7 +9,9 @@
   let categories = $state([]);
   let colors = $state({});
   let icons = $state({});
-  let selectedMonth = $state("");
+  // Di default il mese corrente, non "Tutti i mesi" (resta selezionabile a
+  // mano dal filtro) — è la vista che serve più spesso aprendo la sezione.
+  let selectedMonth = $state(new Date().toISOString().slice(0, 7));
 
   // Spese pianificate: non compaiono nella lista, ma il loro totale è affiancato
   // al "Totale spese" del mese selezionato.

@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -33,6 +34,7 @@ from routes import (
     telegram,
     categories,
 )
+import telegram_bot
 
 app = FastAPI(title="FinanceD API")
 
@@ -65,12 +67,17 @@ async def require_api_token(request: Request, call_next):
 
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     init_db()
     init_monthly_summaries()
     init_planned_expenses()
     init_settings()
     init_categories()
+    # Ritenta in background i messaggi Telegram rimasti in coda (Gemini
+    # irraggiungibile al momento dell'invio) — vedi telegram_bot.py. Gira
+    # anche in sviluppo (coda quasi sempre vuota lì, costo trascurabile) per
+    # non avere un ramo di codice diverso solo per l'ambiente desktop.
+    asyncio.create_task(telegram_bot.queue_worker_loop())
 
 
 @app.get("/health")

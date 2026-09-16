@@ -6,7 +6,14 @@ const path = require("path");
 const fs = require("fs");
 
 const DEFAULT_BACKEND_PORT = 8000;
-const BACKEND_READY_TIMEOUT_MS = 20_000;
+// Era 20s, alzato a 45s: da quando il backend importa google-genai (bot
+// Telegram) l'eseguibile PyInstaller impiega ~25-30s a freddo solo per
+// estrarsi e importare le dipendenze (onefile: succede ad ogni avvio, non
+// solo al primo) — misurato direttamente lanciando dist/financed-backend.
+// Con 20s la finestra si apriva prima che il backend rispondesse, mostrando
+// un errore permanente: i componenti Svelte non ritentano da soli dopo un
+// fetch fallito (stesso bug di issue-turso-1, causa diversa).
+const BACKEND_READY_TIMEOUT_MS = 45_000;
 const BACKEND_POLL_INTERVAL_MS = 250;
 
 let backendProcess;

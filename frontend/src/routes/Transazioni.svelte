@@ -95,6 +95,9 @@
   let totalSpese = $derived(
     filtered.filter((tx) => tx.amount < 0).reduce((sum, tx) => sum + Math.abs(tx.amount), 0)
   );
+  let totalEntrate = $derived(
+    filtered.filter((tx) => tx.amount >= 0).reduce((sum, tx) => sum + tx.amount, 0)
+  );
   let speseCount = $derived(filtered.filter((tx) => tx.amount < 0).length);
   let entrateCount = $derived(filtered.filter((tx) => tx.amount >= 0).length);
 
@@ -182,16 +185,23 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-head">
-          <span class="eyebrow">Totale spese</span>
-          <div class="stat-icon"><Icon name="trending-down" size={14} /></div>
+          <span class="eyebrow">{typeFilter === "entrate" ? "Totale entrate" : "Totale spese"}</span>
+          <div class="stat-icon">
+            <Icon name={typeFilter === "entrate" ? "trending-up" : "trending-down"} size={14} />
+          </div>
         </div>
-        <span class="stat-value">€{totalSpese.toFixed(2)}</span>
-        {#if plannedApplies(selectedMonth) && plannedTotal > 0}
-          <span class="stat-caption">
-            + €{plannedTotal.toFixed(2)} pianificate → <strong>€{(totalSpese + plannedTotal).toFixed(2)}</strong> con pianificate
-          </span>
-        {:else}
+        {#if typeFilter === "entrate"}
+          <span class="stat-value">€{totalEntrate.toFixed(2)}</span>
           <span class="stat-caption">nel periodo selezionato</span>
+        {:else}
+          <span class="stat-value">€{totalSpese.toFixed(2)}</span>
+          {#if plannedApplies(selectedMonth) && plannedTotal > 0}
+            <span class="stat-caption">
+              + €{plannedTotal.toFixed(2)} pianificate → <strong>€{(totalSpese + plannedTotal).toFixed(2)}</strong> con pianificate
+            </span>
+          {:else}
+            <span class="stat-caption">nel periodo selezionato</span>
+          {/if}
         {/if}
       </div>
       <div class="stat-card">

@@ -6,6 +6,15 @@
   import { plannedApplies } from "../lib/planned.js";
 
   const NON_SPESA = ["Entrata", "Rimborso ricevuto", "Altro"];
+  // Sottoinsieme di NON_SPESA che non è mai una spesa in nessun contesto (a
+  // differenza di "Altro", che è una categoria di spesa a tutti gli effetti —
+  // è solo nascosta dai chip di filtro). Usato per escludere entrate/rimborsi
+  // dai grafici "per categoria": l'aggregazione Revolut/Telegram li esclude
+  // già guardando il segno dell'importo, ma un'entrata salvata per errore con
+  // segno negativo (successo una volta col bot) altrimenti ci finirebbe dentro
+  // comunque — qui si esclude per categoria, non per segno, così l'invariante
+  // "niente Entrata/Rimborso nei grafici di spesa" non dipende dai dati.
+  const NON_SPESA_CATEGORIE = ["Entrata", "Rimborso ricevuto"];
 
   let allTx = $state([]);
   let notionSummaries = $state([]);
@@ -95,11 +104,13 @@
   let unifiedRows = $derived.by(() => {
     const rows = [];
     for (const r of notionSummaries) {
+      if (NON_SPESA_CATEGORIE.includes(r.category)) continue;
       rows.push({ month: r.month, category: r.category, amount: r.amount, source: "notion" });
     }
     const agg = {};
     for (const tx of allTx) {
       if (tx.amount >= 0) continue;
+      if (NON_SPESA_CATEGORIE.includes(tx.category)) continue;
       const month = tx.date.slice(0, 7);
       const key = month + "||" + tx.category;
       if (!agg[key]) agg[key] = { month, category: tx.category, amount: 0, source: "revolut" };

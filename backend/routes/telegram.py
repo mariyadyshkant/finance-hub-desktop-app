@@ -9,6 +9,7 @@ registra il webhook con `secret_token`).
 Gli altri endpoint qui (`set-webhook`, `info`, `delete-webhook`) sono strumenti
 di configurazione una-tantum e restano protetti dal normale `X-API-Token`.
 """
+import asyncio
 import os
 
 import requests
@@ -30,11 +31,28 @@ async def telegram_webhook(request: Request):
         raise HTTPException(status_code=403, detail="Secret token non valido")
 
     update = await request.json()
-    # handle_update fa chiamate HTTP bloccanti (Bot API, Claude): fuori dal loop.
-    # Non solleva mai — se qualcosa va storto logga e basta, così Telegram non
-    # ritenta all'infinito lo stesso update.
-    await run_in_threadpool(telegram_bot.handle_update, update)
+
+    # Rispondere PRIMA di elaborare, non dopo — visto dal vivo: elaborare
+    # significa una chiamata a Gemini (fino a ~25s tra timeout e retry
+    # dell'SDK, vedi telegram_bot._interpret) più l'invio su Telegram. Se
+    # aspettavamo tutto questo prima di rispondere 200, Telegram considerava
+    # la consegna appesa/fallita e RIMANDAVA lo stesso update — da qui
+    # l'orologio che gira sul telefono, poi il messaggio segnato come non
+    # inviato, e messaggi doppi che si accavallano in corsa fra loro quando
+    # la copia rimandata arrivava mentre la prima stava ancora elaborando.
+    # Ora rispondiamo subito e l'elaborazione vera gira in background — vedi
+    # anche il controllo su update_id in handle_update, seconda rete di
+    # sicurezza se Telegram rimanda comunque lo stesso update per altri motivi
+    # (bug lato loro, riavvio della macchina Fly a metà elaborazione, ecc.).
+    asyncio.create_task(_process_in_background(update))
     return {"ok": True}
+
+
+async def _process_in_background(update: dict) -> None:
+    try:
+        await run_in_threadpool(telegram_bot.handle_update, update)
+    except Exception as e:
+        print("[telegram] errore elaborazione update in background:", repr(e))
 
 
 class SetWebhookIn(BaseModel):

@@ -697,10 +697,54 @@ _COMMANDS = {
 }
 
 
+def _already_seen(update_id) -> bool:
+    """True se questo update_id di Telegram è già stato preso in carico.
+
+    Scrive subito un segnaposto (INSERT su una PRIMARY KEY): se la stessa
+    consegna arriva due volte — Telegram rimanda un update quando non riceve
+    una risposta rapida al webhook, e con due macchine Fly la seconda copia
+    può capitare sull'altra — la seconda INSERT fallisce per chiave duplicata
+    e viene scartata prima di rifare tutta l'elaborazione (chiamata a Gemini,
+    inserimento della transazione, messaggio di conferma). In caso di dubbio
+    (un errore diverso, es. Turso momentaneamente irraggiungibile) si preferisce
+    elaborare comunque: un duplicato occasionale è recuperabile con /cancella,
+    un messaggio perso silenziosamente no.
+    """
+    if update_id is None:
+        return False
+    try:
+        conn = db.get_conn()
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS telegram_seen_updates "
+            "(update_id INTEGER PRIMARY KEY, seen_at TEXT DEFAULT (datetime('now')))"
+        )
+        conn.execute("INSERT INTO telegram_seen_updates (update_id) VALUES (?)", (update_id,))
+        conn.commit()
+        # Pulizia occasionale invece di un job a parte: tiene la tabella
+        # piccola senza doverci pensare.
+        if update_id % 200 == 0:
+            conn.execute(
+                "DELETE FROM telegram_seen_updates WHERE seen_at < datetime('now', '-7 days')"
+            )
+            conn.commit()
+        conn.close()
+        return False
+    except Exception as e:
+        msg = str(e).lower()
+        if "unique" in msg or "primary key" in msg or "constraint" in msg:
+            return True
+        print("[telegram] controllo update_id fallito, elaboro comunque:", repr(e))
+        return False
+
+
 def handle_update(update: dict) -> None:
     """Gestisce un update Telegram. Non solleva: logga e basta."""
     message = update.get("message") or update.get("edited_message")
     if not message or "text" not in message:
+        return
+
+    if _already_seen(update.get("update_id")):
+        print(f"[telegram] update {update.get('update_id')} già elaborato, ignorato (reinvio Telegram)")
         return
 
     chat = message.get("chat", {})

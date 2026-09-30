@@ -38,4 +38,46 @@ il link del repo.
 
 ## Status
 
-[ ] Da fare
+[x] Completata
+
+**Completata il:** 2026-09-30
+
+**Cosa è stato fatto:**
+- `Pianificazione.svelte` (925 → 244 righe): estratti 3 sotto-componenti per
+  tab in `lib/components/planning/` — `SpesePianificate.svelte`,
+  `Budget.svelte`, `Consuntivo.svelte`. Il parent resta proprietario del
+  caricamento dati e dei derived condivisi tra tab (`unifiedRows`,
+  `catAverages`, `monthRows`, ecc.).
+- `Stipendi.svelte` (724 → 92 righe): estratti 3 sotto-componenti per tab in
+  `lib/components/salary/` — `OreTurni.svelte`, `StoricoStipendi.svelte`,
+  `Previsione.svelte`.
+- `Dashboard.svelte` (678 → 266 righe): estratti 7 sotto-componenti (un
+  grafico/riepilogo ciascuno) in `lib/components/dashboard/` —
+  `ImportRevolut`, `KpiRow`, `CategoryBreakdownChart`, `DailyTrendChart`,
+  `ConfrontoMensileChart`, `AndamentoCategoriaChart`, `MediaMensileChart`.
+- `Impostazioni.svelte` (662 → 63 righe): estratte 3 card in
+  `lib/components/settings/` — `ProfileCard`, `SplitwiseCard`,
+  `CategorieCard` (quest'ultima la più grossa, CRUD categorie + icon picker).
+  Per i due campi con binding a due vie (`displayName`,
+  `splitwiseConfigured`) introdotto `$bindable()` — primo uso nel progetto,
+  scelto invece di far ricaricare i dati al genitore dopo ogni salvataggio.
+- Pattern comune: i parent restano responsabili del data loading (`api.get`)
+  e passano dati + callback (`onchange`, `onerror`) ai figli; i figli con
+  CRUD locale (form aggiungi/modifica/elimina) chiamano l'API direttamente e
+  invocano il callback per far ricaricare il genitore — stesso pattern già
+  in uso in `TransactionRow.svelte`.
+- Verifica: `npm run build` pulito dopo ogni file scomposto (4 build
+  separate). Assente un browser automation tool in questo ambiente per un
+  test visivo diretto — verificato invece che ogni nuovo componente
+  compili senza errori lato dev server Vite (richiesta diretta ai moduli
+  `.svelte`, tutti 200 OK, nessun errore nei log) e che tutti gli endpoint
+  backend consumati rispondano con la forma dati attesa, testato contro il
+  backend reale (Turso) in esecuzione locale.
+
+**Deliberatamente fuori scope:**
+- Nessun cambio di logica o UI: solo riorganizzazione in componenti più
+  piccoli, stile CSS scoped duplicato dove necessario (comportamento normale
+  di Svelte, non un'astrazione CSS condivisa introdotta ad hoc).
+- Nessun test automatico in browser reale: non disponibile un tool di
+  automazione browser in questo ambiente. Verifica manuale nel browser
+  dell'app consigliata prima di considerare la UI definitivamente testata.

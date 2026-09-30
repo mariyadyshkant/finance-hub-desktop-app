@@ -25,6 +25,16 @@ def get_conn():
     return sqlite3.connect(DB_PATH, check_same_thread=False)
 
 
+def db_backend_label():
+    """Descrizione leggibile del backend DB attivo, per il log di avvio
+    (issue-audit-4: la scelta Turso/SQLite in get_conn() era silenziosa —
+    se questa istanza e il bot Telegram finiscono su backend diversi, i dati
+    divergono senza nessun avviso)."""
+    if TURSO_URL:
+        return f"Turso ({TURSO_URL})"
+    return f"SQLite locale ({DB_PATH})"
+
+
 def _close(conn):
     conn.close()
 

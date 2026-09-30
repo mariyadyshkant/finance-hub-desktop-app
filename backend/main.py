@@ -68,6 +68,7 @@ async def require_api_token(request: Request, call_next):
 
 @app.on_event("startup")
 async def on_startup():
+    print(f"[financed] DB backend: {db.db_backend_label()}")
     init_db()
     init_monthly_summaries()
     init_planned_expenses()

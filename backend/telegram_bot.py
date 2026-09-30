@@ -608,11 +608,39 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
         data = result["input"]
         desc = str(data["descrizione"]).strip() or ("Entrata" if is_income else "Spesa")
         amount = abs(float(data["importo"]))
+        if amount <= 0:
+            # Gemini a volte classifica un messaggio come registra_spesa senza
+            # un importo riconoscibile (es. un messaggio ambiguo) — meglio
+            # chiedere di riprovare che salvare una transazione da €0 nel
+            # database reale.
+            send_message(
+                chat_id,
+                "Non ho capito l'importo — riprova specificandolo, es. «€8 bar boulevard».",
+            )
+            return True
         pool = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
         category = data["categoria"] if data["categoria"] in pool else pool[0]
         tx_date = _valid_iso_date(data.get("data", "")) or _today_iso()
-        new_id = _insert_transaction(desc, amount, category, tx_date, is_income)
-        db.set_setting(_LAST_TX_KEY, str(new_id))
+        try:
+            new_id = _insert_transaction(desc, amount, category, tx_date, is_income)
+            db.set_setting(_LAST_TX_KEY, str(new_id))
+        except Exception as e:
+            # A differenza degli errori di Gemini (già gestiti sopra), un
+            # fallimento qui arriva DOPO che Gemini ha già interpretato il
+            # messaggio: senza questo except, un blip momentaneo del database
+            # (Turso irraggiungibile) perderebbe silenziosamente la spesa,
+            # senza salvarla, senza rimetterla in coda e senza avvisare
+            # l'utente — vedi issue-audit-3.
+            print("[telegram] scrittura su DB fallita per registra_spesa:", repr(e))
+            if announce_queue:
+                _enqueue_pending(chat_id, text)
+                send_message(
+                    chat_id,
+                    "⏳ Ho capito cosa registrare ma il database non risponde ora. "
+                    "L'ho messo in coda, ci riprovo da solo tra poco. /coda per "
+                    "vedere cosa c'è in attesa.",
+                )
+            return False
 
         verbo = "Registrata entrata" if is_income else "Registrato"
         today = _today_iso()
@@ -638,38 +666,54 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
         campo = data["campo"]
         was_income = last_tx["amount"] >= 0
 
-        if campo == "importo":
-            new_amount = abs(float(data.get("nuovo_importo") or 0))
-            if new_amount <= 0:
-                send_message(chat_id, "Importo non valido.")
-                return True
-            db.update_transaction(last_tx["id"], amount=new_amount if was_income else -new_amount)
-            send_message(
-                chat_id,
-                f"Corretto — {last_tx['description']} {_fmt_eur(new_amount)} · {last_tx['category']}",
-            )
-        elif campo == "categoria":
-            new_cat = data.get("nuova_categoria") or ""
-            pool = _INCOME_CATEGORIES if was_income else _EXPENSE_CATEGORIES
-            if new_cat not in pool:
-                send_message(chat_id, "Categoria non riconosciuta.")
-                return True
-            db.update_transaction(last_tx["id"], category=new_cat)
-            send_message(chat_id, f"Categoria aggiornata → {new_cat}")
-        elif campo == "descrizione":
-            new_desc = (data.get("nuova_descrizione") or "").strip()
-            if not new_desc:
-                send_message(chat_id, "Descrizione non valida.")
-                return True
-            db.update_transaction(last_tx["id"], description=new_desc)
-            send_message(chat_id, f"Descrizione aggiornata → {new_desc}")
-        elif campo == "data":
-            new_date = _valid_iso_date(data.get("nuova_data", ""))
-            if not new_date:
-                send_message(chat_id, "Data non valida.")
-                return True
-            db.update_transaction(last_tx["id"], date=new_date)
-            send_message(chat_id, f"Data aggiornata → {_fmt_date_it(new_date)}")
+        try:
+            if campo == "importo":
+                new_amount = abs(float(data.get("nuovo_importo") or 0))
+                if new_amount <= 0:
+                    send_message(chat_id, "Importo non valido.")
+                    return True
+                db.update_transaction(last_tx["id"], amount=new_amount if was_income else -new_amount)
+                send_message(
+                    chat_id,
+                    f"Corretto — {last_tx['description']} {_fmt_eur(new_amount)} · {last_tx['category']}",
+                )
+            elif campo == "categoria":
+                new_cat = data.get("nuova_categoria") or ""
+                pool = _INCOME_CATEGORIES if was_income else _EXPENSE_CATEGORIES
+                if new_cat not in pool:
+                    send_message(chat_id, "Categoria non riconosciuta.")
+                    return True
+                db.update_transaction(last_tx["id"], category=new_cat)
+                send_message(chat_id, f"Categoria aggiornata → {new_cat}")
+            elif campo == "descrizione":
+                new_desc = (data.get("nuova_descrizione") or "").strip()
+                if not new_desc:
+                    send_message(chat_id, "Descrizione non valida.")
+                    return True
+                db.update_transaction(last_tx["id"], description=new_desc)
+                send_message(chat_id, f"Descrizione aggiornata → {new_desc}")
+            elif campo == "data":
+                new_date = _valid_iso_date(data.get("nuova_data", ""))
+                if not new_date:
+                    send_message(chat_id, "Data non valida.")
+                    return True
+                db.update_transaction(last_tx["id"], date=new_date)
+                send_message(chat_id, f"Data aggiornata → {_fmt_date_it(new_date)}")
+        except Exception as e:
+            # Stesso ragionamento del ramo registra_spesa sopra: un fallimento
+            # del DB qui arriva dopo che Gemini ha già interpretato la
+            # correzione, quindi senza questo except andrebbe persa in
+            # silenzio invece di finire in coda — vedi issue-audit-3.
+            print("[telegram] scrittura su DB fallita per correggi_ultima:", repr(e))
+            if announce_queue:
+                _enqueue_pending(chat_id, text)
+                send_message(
+                    chat_id,
+                    "⏳ Ho capito la correzione ma il database non risponde ora. "
+                    "L'ho messa in coda, ci riprovo da solo tra poco. /coda per "
+                    "vedere cosa c'è in attesa.",
+                )
+            return False
         return True
 
     # non_pertinente

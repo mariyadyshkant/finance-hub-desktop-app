@@ -114,4 +114,27 @@ Decisioni prese con l'utente:
 
 ## Status
 
-[ ] Da fare
+[x] Codice scritto in `backend/telegram_bot.py` sul branch `issue-telegram-4`
+    (creato da `main`, che contiene già i fix di issue-audit-3): download
+    foto da Telegram, `_interpret_photo`/prompt/schema vision dedicati,
+    stato "candidato in attesa" su `app_settings`, conferma/correzione/
+    annulla, estensione della coda (`kind`: `text`/`photo`/`confirmed`),
+    `_describe_pending` per `/coda`, `_HELP` aggiornato.
+[x] Verificato in locale con script di logica (mock di `send_message`,
+    `_download_telegram_file`, `_interpret`/`_interpret_photo`,
+    `_insert_transaction`, `db.get_setting`/`set_setting`, invocando
+    `handle_update` end-to-end): foto valida → conferma → «sì» → inserita;
+    «annulla» → scartata; foto → correzione → nuovo prompt → «sì» →
+    inserita coi valori corretti; Gemini vision irraggiungibile → coda
+    `kind="photo"`; DB che fallisce alla conferma → coda `kind="confirmed"`;
+    foto non pertinente; didascalia con `+` → entrata; retry di coda per
+    entrambi i nuovi `kind`; percorso testuale esistente (registrazione,
+    `/aiuto`) invariato — 9 scenari foto + 2 di non-regressione, tutti OK.
+[x] `ast.parse` + import del modulo contro il backend locale (Turso reale):
+    nessun errore; migrazione pigra di `telegram_pending` verificata
+    (colonne `kind`/`payload_json` presenti dopo lo startup).
+[ ] Deploy su Fly.io e verifica end-to-end dal telefono (foto reale di uno
+    scontrino e screenshot di una notifica di pagamento, contro Gemini
+    vision reale) — non verificabile da qui per mancanza di
+    `GEMINI_API_KEY`/`TELEGRAM_BOT_TOKEN` in locale.
+[ ] Merge `issue-telegram-4` in `dev`, poi in `main`.

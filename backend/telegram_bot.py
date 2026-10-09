@@ -23,6 +23,12 @@ Scelte (vedi ADR.md → "Integrazione Telegram Bot"):
   `telegram_pending`) e un task in background (`queue_worker_loop`, avviato da
   `main.py`) lo ritenta ogni minuto finché non va a buon fine o supera
   `_QUEUE_MAX_ATTEMPTS`.
+- Oltre al testo, il bot accetta anche una FOTO (scontrino, notifica di
+  pagamento, o una lista di più movimenti in uno screenshot — ogni pagamento
+  distinto diventa un candidato separato). A differenza del testo, una foto
+  passa sempre da una conferma esplicita prima di scrivere nel database
+  (vedi `_handle_photo`/`_handle_confirmation_reply`): l'OCR/vision su
+  un'immagine sbaglia più spesso di un numero scritto a mano.
 """
 import asyncio
 import base64
@@ -376,38 +382,43 @@ def _system_prompt_photo(today_iso: str, is_income: bool, caption: str) -> str:
     return (
         "Sei l'assistente di un bot Telegram personale per registrare "
         f"movimenti di conto in italiano. Oggi è {today_iso} ({oggi_leggibile}). "
-        "L'immagine è UNA di queste due cose:\n"
-        "- uno screenshot di una notifica di pagamento con carta (push "
-        "notification della banca/app di pagamento): estrai il nome del "
-        "negozio/esercente e l'importo mostrato.\n"
-        "- la foto di uno scontrino cartaceo: estrai il nome del negozio "
+        "L'immagine è UNA di queste cose:\n"
+        "- uno screenshot di UNA SINGOLA notifica di pagamento con carta "
+        "(push notification della banca/app di pagamento): un solo "
+        "pagamento, estrai nome del negozio/esercente e importo.\n"
+        "- la foto di UNO scontrino cartaceo: estrai il nome del negozio "
         "(intestazione dello scontrino) e il TOTALE pagato (non la somma "
-        "delle singole voci se è già scritto un totale) — una foto "
-        "corrisponde SEMPRE a una sola transazione con l'importo totale, "
-        "mai una per riga.\n"
-        f"L'utente ti ha già detto che questa foto rappresenta {tipo}: usa "
-        f"solo queste categorie: {', '.join(categorie)}." + didascalia + "\n"
-        "Se riesci a leggere chiaramente negozio/importo → azione = "
-        "registra_spesa, con una descrizione breve e pulita (nome del "
-        "negozio se leggibile), l'importo totale (sempre positivo), la "
-        "categoria più adatta, e la data in formato YYYY-MM-DD se è "
-        "leggibile nell'immagine, altrimenti oggi.\n"
-        "Se l'immagine non è né una notifica di pagamento né uno scontrino, "
-        "o è troppo poco chiara per leggere un importo → azione = "
-        "non_pertinente.\n"
-        "Non inventare un importo che non riesci a leggere con certezza."
+        "delle singole voci se è già scritto un totale) — uno scontrino "
+        "corrisponde SEMPRE a un solo pagamento con l'importo totale, mai "
+        "uno per riga/articolo.\n"
+        "- una LISTA di più movimenti distinti nello stesso screenshot "
+        "(es. l'elenco movimenti/transazioni di un'app bancaria, con più "
+        "pagamenti a esercenti diversi, ciascuno con il proprio importo e "
+        "data): in questo caso estrai UN pagamento per ogni riga/movimento "
+        "distinto della lista, non un totale unico.\n"
+        f"L'utente ti ha già detto che questi sono {tipo}: usa solo queste "
+        f"categorie: {', '.join(categorie)}." + didascalia + "\n"
+        "Se riesci a leggere chiaramente almeno un pagamento → azione = "
+        "registra_spese, con un elemento in `spese` per ogni pagamento "
+        "distinto che riesci a leggere (quasi sempre 1, più di 1 solo per "
+        "una lista di movimenti) — per ciascuno: una descrizione breve e "
+        "pulita (nome del negozio/esercente se leggibile), l'importo "
+        "(sempre positivo), la categoria più adatta, e la data in formato "
+        "YYYY-MM-DD se leggibile nell'immagine per quel pagamento, "
+        "altrimenti oggi.\n"
+        "Se l'immagine non è nessuna delle cose sopra, o è troppo poco "
+        "chiara per leggere con certezza almeno un importo → azione = "
+        "non_pertinente, `spese` vuoto.\n"
+        "Non inventare un pagamento o un importo che non riesci a leggere "
+        "con certezza."
     )
 
 
 def _response_schema_photo(is_income: bool) -> dict:
     categorie = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
-    return {
+    spesa_schema = {
         "type": "object",
         "properties": {
-            "azione": {
-                "type": "string",
-                "enum": ["registra_spesa", "non_pertinente"],
-            },
             "descrizione": {"type": "string"},
             "importo": {"type": "number"},
             "categoria": {"type": "string", "enum": categorie},
@@ -416,14 +427,28 @@ def _response_schema_photo(is_income: bool) -> dict:
                 "description": "YYYY-MM-DD letta dall'immagine. Se non leggibile, oggi.",
             },
         },
-        "required": ["azione", "descrizione", "importo", "categoria", "data"],
-        "propertyOrdering": ["azione", "descrizione", "importo", "categoria", "data"],
+        "required": ["descrizione", "importo", "categoria", "data"],
+        "propertyOrdering": ["descrizione", "importo", "categoria", "data"],
+    }
+    return {
+        "type": "object",
+        "properties": {
+            "azione": {
+                "type": "string",
+                "enum": ["registra_spese", "non_pertinente"],
+            },
+            "spese": {"type": "array", "items": spesa_schema},
+        },
+        "required": ["azione", "spese"],
+        "propertyOrdering": ["azione", "spese"],
     }
 
 
 def _interpret_photo(image_bytes: bytes, caption: str, is_income: bool = False) -> dict:
-    """Come _interpret, ma per un'immagine. Stessa forma di ritorno
-    ({'tool': 'registra_spesa'|'non_pertinente'|'errore', ...})."""
+    """Come _interpret, ma per un'immagine. Una foto può contenere più
+    pagamenti distinti (es. una lista di movimenti bancari), non solo uno:
+    il risultato è sempre {'tool': 'registra_spesa', 'input': {'spese': [...]}}
+    con uno o più elementi, oppure 'non_pertinente'/'errore'."""
     try:
         from google import genai
         from google.genai import types
@@ -457,22 +482,23 @@ def _interpret_photo(image_bytes: bytes, caption: str, is_income: bool = False) 
     except Exception as e:
         return {"tool": "errore", "messaggio": f"Errore Gemini: {e}"}
 
-    if data.get("azione") != "registra_spesa":
+    spese_raw = data.get("spese") or []
+    if data.get("azione") != "registra_spese" or not spese_raw:
         return {"tool": "non_pertinente", "input": {"motivo": "immagine non riconosciuta"}}
 
     categorie_ok = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
-    categoria = data.get("categoria", "")
-    if categoria not in categorie_ok:
-        categoria = "Entrata" if is_income else "Altro"
-    return {
-        "tool": "registra_spesa",
-        "input": {
-            "descrizione": data.get("descrizione", ""),
-            "importo": data.get("importo", 0),
+    spese = []
+    for item in spese_raw:
+        categoria = item.get("categoria", "")
+        if categoria not in categorie_ok:
+            categoria = "Entrata" if is_income else "Altro"
+        spese.append({
+            "descrizione": item.get("descrizione", ""),
+            "importo": item.get("importo", 0),
             "categoria": categoria,
-            "data": _valid_iso_date(data.get("data", "")) or _today_iso(),
-        },
-    }
+            "data": _valid_iso_date(item.get("data", "")) or _today_iso(),
+        })
+    return {"tool": "registra_spesa", "input": {"spese": spese}}
 
 
 # ─── Comandi ────────────────────────────────────────────────────────────────
@@ -486,10 +512,13 @@ _HELP = (
     "Scrivi + davanti per registrare un'ENTRATA invece di una spesa:\n"
     "  «+50 stipendio»\n"
     "  «+20 rimborso da Marco»\n\n"
-    "Manda una FOTO di uno scontrino o uno screenshot di una notifica di "
-    "pagamento: ti mostro cosa ho letto e aspetto una conferma prima di "
-    "salvare (rispondi «sì», «annulla», o scrivi una correzione). Stesso "
-    "+ davanti alla didascalia per un'entrata.\n\n"
+    "Manda una FOTO di uno scontrino, uno screenshot di una notifica di "
+    "pagamento, o anche una lista di più movimenti (es. l'elenco "
+    "transazioni dell'app della banca): ti mostro cosa ho letto, uno alla "
+    "volta se sono più di uno, e aspetto una conferma prima di salvare "
+    "ciascuno (rispondi «sì», «annulla» per saltarlo, «annulla tutto» per "
+    "scartare tutti i rimanenti, o scrivi una correzione). Stesso + "
+    "davanti alla didascalia per un'entrata.\n\n"
     "Correggi l'ultima registrazione scrivendo in chiaro:\n"
     "  «era 54 non 45» · «mettila in Persona» · «era di ieri»\n\n"
     "Comandi:\n"
@@ -945,30 +974,41 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
 
 _AFFIRMATIVE = {"si", "sì", "ok", "okay", "va bene", "confermo", "conferma", "yes", "👍", "✅"}
 _NEGATIVE = {"no", "annulla", "annullato", "scarta", "scartala", "cancella"}
+_NEGATIVE_ALL = {"annulla tutto", "annulla tutti", "scarta tutto", "scarta tutti"}
 
 
-def _get_pending_photo_candidate() -> dict | None:
+def _get_pending_photo_state() -> dict | None:
+    """{'queue': [candidato, ...], 'index': posizione 1-based del primo
+    della coda nel lotto originale, 'total': quanti erano in tutto}. None se
+    non c'è nessun pagamento in attesa di conferma."""
     raw = db.get_setting(_PENDING_PHOTO_KEY)
     if not raw:
         return None
     try:
-        return json.loads(raw)
+        state = json.loads(raw)
     except (ValueError, TypeError):
         return None
+    return state if state and state.get("queue") else None
 
 
-def _set_pending_photo_candidate(candidate: dict | None) -> None:
-    db.set_setting(_PENDING_PHOTO_KEY, json.dumps(candidate) if candidate else "")
+def _set_pending_photo_state(state: dict | None) -> None:
+    db.set_setting(_PENDING_PHOTO_KEY, json.dumps(state) if state and state.get("queue") else "")
 
 
-def _format_confirmation_prompt(candidate: dict) -> str:
+def _format_confirmation_prompt(candidate: dict, index: int, total: int) -> str:
     tipo = "un'entrata" if candidate["is_income"] else "una spesa"
-    return (
-        f"📷 Ho letto {tipo}:\n"
-        f"{candidate['descrizione']} {_fmt_eur(candidate['importo'])} · "
-        f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}\n\n"
-        "Confermi? Rispondi «sì» per salvare, «annulla» per scartare, oppure "
+    header = f"📷 Ho letto {tipo} ({index}/{total}):\n" if total > 1 else f"📷 Ho letto {tipo}:\n"
+    footer = (
+        "Confermi? Rispondi «sì» per salvare, «annulla» per saltarla, oppure "
         "scrivi una correzione (es. «era 12 non 8», «mettila in Salute»)."
+    )
+    if total > 1:
+        footer += " «annulla tutto» scarta anche i pagamenti rimasti."
+    return (
+        header
+        + f"{candidate['descrizione']} {_fmt_eur(candidate['importo'])} · "
+        f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}\n\n"
+        + footer
     )
 
 
@@ -1005,8 +1045,9 @@ def _handle_photo(chat_id, photo_sizes: list, caption: str) -> None:
 
 def _apply_photo_result(chat_id, result: dict, is_income: bool) -> None:
     """Dispatcha un risultato di _interpret_photo già arrivato (dal percorso
-    live o da un retry di coda): propone il candidato per conferma, non
-    scrive mai direttamente nel database."""
+    live o da un retry di coda): propone i pagamenti letti per conferma,
+    uno alla volta — non scrive mai direttamente nel database. Una foto può
+    contenere più pagamenti distinti (es. una lista di movimenti bancari)."""
     tool = result.get("tool")
     if tool == "non_pertinente":
         send_message(
@@ -1016,26 +1057,31 @@ def _apply_photo_result(chat_id, result: dict, is_income: bool) -> None:
         )
         return
 
-    data = result["input"]
-    candidate = {
-        "descrizione": str(data["descrizione"]).strip() or ("Entrata" if is_income else "Spesa"),
-        "importo": abs(float(data["importo"])),
-        "categoria": data["categoria"],
-        "data": _valid_iso_date(data.get("data", "")) or _today_iso(),
-        "is_income": is_income,
-    }
-    if candidate["importo"] <= 0:
+    candidates = []
+    for item in result["input"]["spese"]:
+        candidate = {
+            "descrizione": str(item["descrizione"]).strip() or ("Entrata" if is_income else "Spesa"),
+            "importo": abs(float(item["importo"])),
+            "categoria": item["categoria"],
+            "data": _valid_iso_date(item.get("data", "")) or _today_iso(),
+            "is_income": is_income,
+        }
+        if candidate["importo"] > 0:
+            candidates.append(candidate)
+
+    if not candidates:
         send_message(
             chat_id,
-            "Non riesco a leggere l'importo dalla foto — riprova con una "
-            "foto più chiara, o scrivimi l'importo a parole.",
+            "Non riesco a leggere nessun importo dalla foto — riprova con "
+            "una foto più chiara, o scrivimi l'importo a parole.",
         )
         return
 
-    if _get_pending_photo_candidate() is not None:
-        send_message(chat_id, "Avevo un'altra foto in attesa di conferma — l'ho sostituita con questa.")
-    _set_pending_photo_candidate(candidate)
-    send_message(chat_id, _format_confirmation_prompt(candidate))
+    if _get_pending_photo_state() is not None:
+        send_message(chat_id, "Avevo altri pagamenti in attesa di conferma — li ho sostituiti con questi.")
+    total = len(candidates)
+    _set_pending_photo_state({"queue": candidates, "index": 1, "total": total})
+    send_message(chat_id, _format_confirmation_prompt(candidates[0], 1, total))
 
 
 def _apply_candidate_correction(candidate: dict, result: dict) -> str | None:
@@ -1070,8 +1116,28 @@ def _apply_candidate_correction(candidate: dict, result: dict) -> str | None:
     return None
 
 
-def _handle_confirmation_reply(chat_id, text: str, candidate: dict) -> None:
+def _advance_pending_photo_queue(chat_id, state: dict) -> None:
+    """Rimuove il pagamento corrente (già gestito) dalla coda e mostra la
+    conferma del prossimo, se ce ne sono altri — altrimenti chiude lo
+    stato. Comune a conferma, salto e fallimento DB."""
+    state["queue"].pop(0)
+    if state["queue"]:
+        state["index"] += 1
+        _set_pending_photo_state(state)
+        send_message(chat_id, _format_confirmation_prompt(state["queue"][0], state["index"], state["total"]))
+    else:
+        _set_pending_photo_state(None)
+
+
+def _handle_confirmation_reply(chat_id, text: str, state: dict) -> None:
     norm = text.strip().lower()
+    candidate = state["queue"][0]
+    is_batch = state["total"] > 1
+
+    if norm in _NEGATIVE_ALL:
+        _set_pending_photo_state(None)
+        send_message(chat_id, "Annullati tutti i pagamenti rimasti.")
+        return
 
     if norm in _AFFIRMATIVE:
         try:
@@ -1083,29 +1149,29 @@ def _handle_confirmation_reply(chat_id, text: str, candidate: dict) -> None:
         except Exception as e:
             print("[telegram] scrittura su DB fallita per conferma foto:", repr(e))
             _enqueue_pending(chat_id, "", kind="confirmed", payload=candidate)
-            _set_pending_photo_candidate(None)
             send_message(
                 chat_id,
                 "⏳ Confermato, ma il database non risponde ora. L'ho messo "
                 "in coda, ci riprovo da solo tra poco. /coda per vedere cosa "
                 "c'è in attesa.",
             )
+            _advance_pending_photo_queue(chat_id, state)
             return
-        _set_pending_photo_candidate(None)
         verbo = "Registrata entrata" if candidate["is_income"] else "Registrato"
         send_message(
             chat_id,
             f"{verbo} — {candidate['descrizione']} {_fmt_eur(candidate['importo'])} · "
             f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}",
         )
+        _advance_pending_photo_queue(chat_id, state)
         return
 
     if norm in _NEGATIVE:
-        _set_pending_photo_candidate(None)
-        send_message(chat_id, "Annullato.")
+        send_message(chat_id, "Saltato." if is_batch else "Annullato.")
+        _advance_pending_photo_queue(chat_id, state)
         return
 
-    # Non è un sì/no: tentativo di correzione del candidato in attesa,
+    # Non è un sì/no: tentativo di correzione del pagamento corrente,
     # riusando l'interprete testuale esistente (stesso schema/prompt di
     # correzione già usato per _LAST_TX_KEY) — il candidato ha gli stessi
     # campi che _interpret si aspetta da last_tx.
@@ -1123,7 +1189,7 @@ def _handle_confirmation_reply(chat_id, text: str, candidate: dict) -> None:
             chat_id,
             "⏳ Non riesco a interpretare la correzione adesso (rete o "
             "modello non disponibile). Riprova, oppure rispondi «sì» per "
-            "confermare com'è o «annulla» per scartare.",
+            "confermare com'è o «annulla» per saltarla.",
         )
         return
 
@@ -1132,13 +1198,14 @@ def _handle_confirmation_reply(chat_id, text: str, candidate: dict) -> None:
         if error:
             send_message(chat_id, error)
             return
-        _set_pending_photo_candidate(candidate)
-        send_message(chat_id, _format_confirmation_prompt(candidate))
+        state["queue"][0] = candidate
+        _set_pending_photo_state(state)
+        send_message(chat_id, _format_confirmation_prompt(candidate, state["index"], state["total"]))
         return
 
     send_message(
         chat_id,
-        "Rispondi «sì» per confermare, «annulla» per scartare, o scrivi una "
+        "Rispondi «sì» per confermare, «annulla» per saltarla, o scrivi una "
         "correzione (es. «era 12 non 8»).",
     )
 
@@ -1240,7 +1307,7 @@ def handle_update(update: dict) -> None:
     # alla conferma (sì/annulla/correzione), non alla normale registrazione
     # — vedi _handle_confirmation_reply. Il riprocessamento della coda
     # testuale (kind="text") non passa da qui, solo il testo live.
-    pending_photo = _get_pending_photo_candidate()
+    pending_photo = _get_pending_photo_state()
     if pending_photo is not None:
         _handle_confirmation_reply(chat_id, text, pending_photo)
         return

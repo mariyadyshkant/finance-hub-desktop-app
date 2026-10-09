@@ -138,3 +138,35 @@ Decisioni prese con l'utente:
     vision reale) — non verificabile da qui per mancanza di
     `GEMINI_API_KEY`/`TELEGRAM_BOT_TOKEN` in locale.
 [ ] Merge `issue-telegram-4` in `dev`, poi in `main`.
+
+**Revisione (2026-10-09) — più pagamenti in una foto.** L'utente ha fatto
+notare un caso non coperto: uno screenshot con più pagamenti distinti nello
+stesso giorno (es. la lista movimenti di un'app bancaria). Con lo schema
+originale (un totale unico per foto) Gemini avrebbe dovuto indovinare quale
+pagamento prendere o inventare un totale sommato senza senso.
+
+Esteso senza rompere il caso singolo (verificato: il messaggio di conferma
+per una foto con un solo pagamento è identico a prima, nessun contatore):
+- `_response_schema_photo`/`_system_prompt_photo`/`_interpret_photo`: Gemini
+  ora restituisce sempre un **elenco** di pagamenti (`spese: [...]`, azione
+  `registra_spese`), uno per riga/movimento distinto se l'immagine è una
+  lista, uno solo se è un singolo scontrino/notifica (il prompt chiarisce la
+  differenza: scontrino con più voci → sempre un totale unico, lista di
+  movimenti → un elemento per movimento).
+- Stato di conferma: da "un candidato" a `{"queue": [...], "index", "total"}`
+  — stessa infrastruttura (`app_settings`), confermati **uno alla volta in
+  sequenza** (non tutti insieme): riusa quasi tutto il codice di conferma/
+  correzione già scritto, cambia solo cosa succede dopo un sì/annulla (si
+  passa al prossimo della coda invece di chiudere lo stato).
+- Nuovi comandi testuali nella conferma: «annulla» ora salta solo il
+  pagamento corrente (non tutta la coda); «annulla tutto»/«annulla tutti»
+  scarta anche i rimanenti.
+- Se il DB fallisce alla conferma di uno dei N, quello va in coda
+  (`kind="confirmed"`, invariato) e si continua a chiedere conferma per i
+  successivi — un fallimento non blocca gli altri.
+- Verificato con 6 nuovi scenari di logica mockati (3 pagamenti confermati
+  tutti in sequenza; uno saltato nel mezzo; «annulla tutto» a metà; una
+  correzione sul pagamento corrente che non tocca gli altri in coda; una
+  foto con un solo pagamento → formato messaggio invariato; DB che fallisce
+  su uno dei N → coda, si continua con gli altri) + ri-verificati i 9+2
+  scenari precedenti, tutti OK.

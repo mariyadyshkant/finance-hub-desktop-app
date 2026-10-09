@@ -196,3 +196,45 @@ stesso messaggio/didascalia (non un passaggio separato):
   mostrata nel prompt di conferma e nel messaggio finale, correzione della
   nota sul candidato in attesa) + ri-verificata la regressione completa
   (foto singola, multi-pagamento, testo semplice, `/aiuto`), tutti OK.
+
+**Fix (2026-10-09) — categorie custom invisibili al bot.** L'utente ha
+testato il bot dal vivo (prima del merge, probabilmente contro un deploy
+precedente) e ha trovato un bug reale: correggere la categoria di una
+spesa da foto in «Animali» falliva con «Categoria non riconosciuta», pur
+essendo «Animali» una categoria valida visibile nell'app desktop.
+
+Causa: `telegram_bot.py` costruiva `_EXPENSE_CATEGORIES` da un elenco
+**statico** (`importers.helpers.CATEGORIES`, le 18 categorie di default),
+non dalla tabella `categories` del database — quindi qualunque categoria
+aggiunta dall'utente dopo il seed iniziale (Impostazioni → Categorie
+nell'app desktop) era invisibile al bot, sia per la registrazione iniziale
+(Gemini non poteva mai scegliere "Animali" per una foto del pet store, da
+qui "Shopping" nello screenshot dell'utente) sia per le correzioni.
+
+Fix: nuova `_category_pool(is_income)` che legge `db.get_categories()` dal
+vivo a ogni chiamata (stesso pattern delle altre funzioni del bot, nessuna
+cache) — sostituisce tutti i 9 usi del vecchio pattern
+`_INCOME_CATEGORIES if ... else _EXPENSE_CATEGORIES`. Rimossi
+`_EXPENSE_CATEGORIES` e l'import di `importers.helpers.CATEGORIES`.
+`_INCOME_CATEGORIES` resta una costante (le due categorie speciali
+entrata/rimborso, seminate di default).
+
+Aggiunto anche, indipendentemente dalla causa di fondo: `_match_category`,
+un confronto tollerante (maiuscole/minuscole, virgolette) per le
+correzioni di categoria — a differenza della registrazione iniziale (dove
+`categoria` è vincolata a un enum nello schema), il campo di una
+correzione (`nuovo_testo`) è testo libero e Gemini può restituirlo con una
+scrittura leggermente diversa da come compare nel pool. Rafforzato anche
+il prompt testuale perché richieda esplicitamente il nome esatto.
+
+Verificato: lo schema Gemini (testo e foto) ora include "Animali" come
+categoria valida; 5 varianti di scrittura della stessa categoria
+("Animali" con virgolette doppie/singole, minuscolo, spazi, maiuscolo)
+tutte riconosciute correttamente in una correzione; una categoria
+inesistente resta correttamente rifiutata; ri-verificata l'intera
+regressione (foto con categoria custom, multi-pagamento, testo semplice,
+correzione categoria con nome esatto), tutti OK.
+
+**Da fare**: questo fix non è ancora deployato — se il bot che l'utente ha
+testato dal vivo era già su Fly.io, serve un nuovo deploy perché il
+comportamento cambi in produzione.

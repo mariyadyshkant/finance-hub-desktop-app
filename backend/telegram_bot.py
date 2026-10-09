@@ -39,7 +39,6 @@ from datetime import date, timedelta
 import requests
 
 import database as db
-from importers.helpers import CATEGORIES
 
 # ─── Config da ambiente ──────────────────────────────────────────────────────
 
@@ -57,9 +56,22 @@ TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 # Categorie per una spesa vs. per un'entrata (vedi il prefisso "+" in
 # _handle_text). Le due liste sono disgiunte: una transazione del bot è o
-# l'una o l'altra, mai ambigua.
+# l'una o l'altra, mai ambigua. "Entrata"/"Rimborso ricevuto" sono le due
+# categorie speciali seminate di default (vedi database/categories.py) — le
+# altre sono lette dal vivo (vedi _category_pool), non da un elenco statico:
+# includono anche le categorie che l'utente aggiunge dall'app desktop
+# (Impostazioni → Categorie, es. "Animali"), altrimenti invisibili al bot.
 _INCOME_CATEGORIES = ["Entrata", "Rimborso ricevuto"]
-_EXPENSE_CATEGORIES = [c for c in CATEGORIES if c not in _INCOME_CATEGORIES]
+
+
+def _category_pool(is_income: bool) -> list[str]:
+    """Pool di categorie valide per spese o entrate, letto dal vivo dalla
+    tabella `categories` — non da un elenco statico in `importers/helpers.py`,
+    che non include le categorie aggiunte dall'utente dopo il seed iniziale."""
+    all_names = [c["name"] for c in db.get_categories()]
+    if is_income:
+        return [c for c in all_names if c in _INCOME_CATEGORIES]
+    return [c for c in all_names if c not in _INCOME_CATEGORIES]
 
 _MESI_IT = [
     "gen", "feb", "mar", "apr", "mag", "giu",
@@ -176,6 +188,21 @@ def _valid_iso_date(value: str) -> str | None:
         return None
 
 
+def _match_category(raw: str, pool: list[str]) -> str | None:
+    """Confronto tollerante per una correzione di categoria: a differenza
+    della registrazione iniziale (categoria vincolata a un enum nello
+    schema), il valore di una correzione arriva in `nuovo_testo`, un campo
+    di testo libero — Gemini può restituirlo con maiuscole/minuscole o
+    virgolette diverse da come l'utente le ha scritte (es. 'Animali',
+    "Animali", animali). Ritorna il nome canonico dal pool, o None se non
+    corrisponde a nessuna categoria valida."""
+    normalized = raw.strip().strip("'\"«»“”‘’").strip().lower()
+    for cat in pool:
+        if cat.lower() == normalized:
+            return cat
+    return None
+
+
 def _insert_transaction(
     description: str, amount_abs: float, category: str, date_iso: str, is_income: bool, note: str = ""
 ) -> int:
@@ -214,7 +241,7 @@ def _system_prompt(today_iso: str, is_income: bool) -> str:
     d = date.fromisoformat(today_iso)
     oggi_leggibile = f"{_GIORNI_IT[d.weekday()]} {d.day} {_MESI_IT[d.month - 1]} {d.year}"
     tipo = "un'ENTRATA o un rimborso ricevuto" if is_income else "una SPESA"
-    categorie = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
+    categorie = _category_pool(is_income)
     return (
         "Sei l'assistente di un bot Telegram personale per registrare "
         f"movimenti di conto in italiano. Oggi è {today_iso} ({oggi_leggibile}). "
@@ -237,7 +264,10 @@ def _system_prompt(today_iso: str, is_income: bool) -> str:
         "era di ieri', 'nota: con Marco' → azione = correggi_ultima, con "
         "campo_correzione e il nuovo valore: nuovo_numero per l'importo, "
         "nuovo_testo per categoria/descrizione/nota, nuovo_testo in formato "
-        "YYYY-MM-DD per la data.\n"
+        "YYYY-MM-DD per la data. Per una correzione di categoria, nuovo_testo "
+        f"deve essere ESATTAMENTE uno di questi nomi, stessa scrittura: "
+        f"{', '.join(categorie)} — senza virgolette e senza modificarne "
+        "maiuscole/minuscole.\n"
         "- nient'altro → azione = non_pertinente.\n"
         "Non inventare un importo se il messaggio non ne contiene uno. Riempi "
         f"sempre tutti i campi: usa 0, stringa vuota o '{_NO_FIELD}' per quelli "
@@ -246,7 +276,7 @@ def _system_prompt(today_iso: str, is_income: bool) -> str:
 
 
 def _response_schema(is_income: bool) -> dict:
-    categorie = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
+    categorie = _category_pool(is_income)
     return {
         "type": "object",
         "properties": {
@@ -335,7 +365,7 @@ def _interpret(text: str, last_tx: dict | None, is_income: bool = False) -> dict
         return {"tool": "errore", "messaggio": f"Errore Gemini: {e}"}
 
     azione = data.get("azione")
-    categorie_ok = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
+    categorie_ok = _category_pool(is_income)
 
     if azione == "registra_spesa":
         categoria = data.get("categoria", "")
@@ -383,7 +413,7 @@ def _system_prompt_photo(today_iso: str, is_income: bool, caption: str) -> str:
     d = date.fromisoformat(today_iso)
     oggi_leggibile = f"{_GIORNI_IT[d.weekday()]} {d.day} {_MESI_IT[d.month - 1]} {d.year}"
     tipo = "un'ENTRATA o un rimborso ricevuto" if is_income else "una SPESA"
-    categorie = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
+    categorie = _category_pool(is_income)
     didascalia = (
         f"\nL'utente ha aggiunto questa didascalia alla foto: «{caption}». "
         "Usala come contesto; se contiene una nota/precisazione (es. 'con "
@@ -427,7 +457,7 @@ def _system_prompt_photo(today_iso: str, is_income: bool, caption: str) -> str:
 
 
 def _response_schema_photo(is_income: bool) -> dict:
-    categorie = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
+    categorie = _category_pool(is_income)
     spesa_schema = {
         "type": "object",
         "properties": {
@@ -499,7 +529,7 @@ def _interpret_photo(image_bytes: bytes, caption: str, is_income: bool = False) 
     if data.get("azione") != "registra_spese" or not spese_raw:
         return {"tool": "non_pertinente", "input": {"motivo": "immagine non riconosciuta"}}
 
-    categorie_ok = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
+    categorie_ok = _category_pool(is_income)
     spese = []
     for item in spese_raw:
         categoria = item.get("categoria", "")
@@ -879,7 +909,7 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
                 "Non ho capito l'importo — riprova specificandolo, es. «€8 bar boulevard».",
             )
             return True
-        pool = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
+        pool = _category_pool(is_income)
         category = data["categoria"] if data["categoria"] in pool else pool[0]
         tx_date = _valid_iso_date(data.get("data", "")) or _today_iso()
         note = (data.get("nota") or "").strip()
@@ -941,9 +971,9 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
                     f"Corretto — {last_tx['description']} {_fmt_eur(new_amount)} · {last_tx['category']}",
                 )
             elif campo == "categoria":
-                new_cat = data.get("nuova_categoria") or ""
-                pool = _INCOME_CATEGORIES if was_income else _EXPENSE_CATEGORIES
-                if new_cat not in pool:
+                pool = _category_pool(was_income)
+                new_cat = _match_category(data.get("nuova_categoria") or "", pool)
+                if not new_cat:
                     send_message(chat_id, "Categoria non riconosciuta.")
                     return True
                 db.update_transaction(last_tx["id"], category=new_cat)
@@ -1128,9 +1158,9 @@ def _apply_candidate_correction(candidate: dict, result: dict) -> str | None:
             return "Importo non valido."
         candidate["importo"] = new_amount
     elif campo == "categoria":
-        pool = _INCOME_CATEGORIES if candidate["is_income"] else _EXPENSE_CATEGORIES
-        new_cat = data.get("nuova_categoria") or ""
-        if new_cat not in pool:
+        pool = _category_pool(candidate["is_income"])
+        new_cat = _match_category(data.get("nuova_categoria") or "", pool)
+        if not new_cat:
             return "Categoria non riconosciuta."
         candidate["categoria"] = new_cat
     elif campo == "descrizione":

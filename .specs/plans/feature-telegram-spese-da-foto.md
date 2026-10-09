@@ -238,3 +238,23 @@ correzione categoria con nome esatto), tutti OK.
 **Da fare**: questo fix non è ancora deployato — se il bot che l'utente ha
 testato dal vivo era già su Fly.io, serve un nuovo deploy perché il
 comportamento cambi in produzione.
+
+**Fix (2026-10-09) — log mancante sui fallimenti Gemini.** L'utente ha
+condiviso i log reali di Fly (`fly logs`) per investigare i due fallimenti
+Gemini visti durante il test dal vivo. I log non mostravano nulla di utile:
+solo `POST /api/telegram/webhook 200 OK` (risposta immediata, invariata
+qualunque cosa succeda dopo in background) e due deploy/riavvii macchina.
+Guardando il codice: `_interpret`/`_interpret_photo` catturavano
+l'eccezione di Gemini e la convertivano in `{"tool": "errore", ...}` per
+decidere se accodare, **senza mai stampare nulla** — quindi anche avendo i
+log disponibili, il motivo esatto (quota, rete, modello ritirato...) non
+sarebbe mai comparso.
+
+Fix: aggiunto un `print("[telegram] _interpret(_photo) fallito:", repr(e))`
+in entrambi gli except, prima del `return`. La prossima volta che succede,
+`fly logs --app financed-backend` mostrerà il messaggio di errore completo
+di Gemini (es. l'esatto testo di un 429 RESOURCE_EXHAUSTED).
+
+Verificato: simulata un'eccezione dentro `_interpret` (monkeypatch di
+`genai.Client.models.generate_content`) e confermato che il log cattura il
+messaggio esatto; ri-verificato il flusso testuale di base, invariato.

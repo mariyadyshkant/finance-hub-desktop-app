@@ -362,6 +362,11 @@ def _interpret(text: str, last_tx: dict | None, is_income: bool = False) -> dict
         )
         data = json.loads(resp.text)
     except Exception as e:  # google.genai.errors.APIError, timeout, JSON non valido, ...
+        # Senza questo log, un fallimento Gemini è invisibile in `fly logs`:
+        # il webhook risponde comunque 200 subito (vedi routes/telegram.py),
+        # e questo "errore" veniva prima solo deciso internamente (mettere o
+        # no in coda) senza mai finire da nessuna parte nei log del server.
+        print("[telegram] _interpret fallito:", repr(e))
         return {"tool": "errore", "messaggio": f"Errore Gemini: {e}"}
 
     azione = data.get("azione")
@@ -523,6 +528,7 @@ def _interpret_photo(image_bytes: bytes, caption: str, is_income: bool = False) 
         )
         data = json.loads(resp.text)
     except Exception as e:
+        print("[telegram] _interpret_photo fallito:", repr(e))
         return {"tool": "errore", "messaggio": f"Errore Gemini: {e}"}
 
     spese_raw = data.get("spese") or []

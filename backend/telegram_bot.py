@@ -177,7 +177,7 @@ def _valid_iso_date(value: str) -> str | None:
 
 
 def _insert_transaction(
-    description: str, amount_abs: float, category: str, date_iso: str, is_income: bool
+    description: str, amount_abs: float, category: str, date_iso: str, is_income: bool, note: str = ""
 ) -> int:
     """Inserisce una transazione e ritorna l'id della nuova riga.
 
@@ -193,7 +193,7 @@ def _insert_transaction(
     cur = conn.execute(
         "INSERT INTO transactions (date, description, amount, category, source, note) "
         "VALUES (?,?,?,?,?,?) RETURNING id",
-        (date_iso, description, amount, category, "telegram", ""),
+        (date_iso, description, amount, category, "telegram", note),
     )
     row = cur.fetchone()
     conn.commit()
@@ -227,12 +227,17 @@ def _system_prompt(today_iso: str, is_income: bool) -> str:
         "descrizione breve e pulita, la categoria più adatta, e la data in "
         "formato YYYY-MM-DD — risolvi espressioni relative ('ieri', 'l'altro "
         "ieri', 'lunedì scorso') rispetto a oggi; se la data non è menzionata "
-        "usa oggi.\n"
+        "usa oggi. Se il messaggio contiene anche una nota/precisazione "
+        "separata dalla descrizione principale — spesso introdotta da 'nota:' "
+        "o da 'con X'/'per Y' dopo una virgola, es. '8 euro bar, nota: con "
+        "Marco' o '20 regalo per Giulia, nota: compleanno' — mettila in nota, "
+        "altrimenti nota resta vuota.\n"
         "- una CORREZIONE dell'ultima registrazione: 'era 54 non 45', "
         "'mettila in Persona', 'la descrizione è sbagliata, è X', 'in realtà "
-        "era di ieri' → azione = correggi_ultima, con campo_correzione e il "
-        "nuovo valore: nuovo_numero per l'importo, nuovo_testo per categoria/"
-        "descrizione, nuovo_testo in formato YYYY-MM-DD per la data.\n"
+        "era di ieri', 'nota: con Marco' → azione = correggi_ultima, con "
+        "campo_correzione e il nuovo valore: nuovo_numero per l'importo, "
+        "nuovo_testo per categoria/descrizione/nota, nuovo_testo in formato "
+        "YYYY-MM-DD per la data.\n"
         "- nient'altro → azione = non_pertinente.\n"
         "Non inventare un importo se il messaggio non ne contiene uno. Riempi "
         f"sempre tutti i campi: usa 0, stringa vuota o '{_NO_FIELD}' per quelli "
@@ -256,19 +261,20 @@ def _response_schema(is_income: bool) -> dict:
                 "type": "string",
                 "description": "YYYY-MM-DD, risolta rispetto a oggi. Se non specificata, oggi.",
             },
+            "nota": {"type": "string", "description": "Nota opzionale, stringa vuota se assente."},
             "campo_correzione": {
                 "type": "string",
-                "enum": ["importo", "categoria", "descrizione", "data", _NO_FIELD],
+                "enum": ["importo", "categoria", "descrizione", "data", "nota", _NO_FIELD],
             },
             "nuovo_testo": {"type": "string"},
             "nuovo_numero": {"type": "number"},
         },
         "required": [
-            "azione", "descrizione", "importo", "categoria", "data",
+            "azione", "descrizione", "importo", "categoria", "data", "nota",
             "campo_correzione", "nuovo_testo", "nuovo_numero",
         ],
         "propertyOrdering": [
-            "azione", "descrizione", "importo", "categoria", "data",
+            "azione", "descrizione", "importo", "categoria", "data", "nota",
             "campo_correzione", "nuovo_testo", "nuovo_numero",
         ],
     }
@@ -295,10 +301,11 @@ def _interpret(text: str, last_tx: dict | None, is_income: bool = False) -> dict
     user_content = text
     if last_tx:
         segno = "+" if last_tx["amount"] >= 0 else "-"
+        nota_hint = f" · nota: {last_tx['note']}" if last_tx.get("note") else ""
         user_content = (
             f"[Ultima registrazione: {last_tx['description']} "
             f"{segno}{_fmt_eur(abs(last_tx['amount']))} · {last_tx['category']} · "
-            f"{last_tx['date']}]\n\n{text}"
+            f"{last_tx['date']}{nota_hint}]\n\n{text}"
         )
 
     try:
@@ -341,12 +348,13 @@ def _interpret(text: str, last_tx: dict | None, is_income: bool = False) -> dict
                 "importo": data.get("importo", 0),
                 "categoria": categoria,
                 "data": _valid_iso_date(data.get("data", "")) or _today_iso(),
+                "nota": data.get("nota", "") or "",
             },
         }
 
     if azione == "correggi_ultima" and last_tx:
         campo = data.get("campo_correzione")
-        if campo not in ("importo", "categoria", "descrizione", "data"):
+        if campo not in ("importo", "categoria", "descrizione", "data", "nota"):
             return {"tool": "non_pertinente", "input": {"motivo": "correzione senza campo"}}
         return {
             "tool": "correggi_ultima",
@@ -356,6 +364,7 @@ def _interpret(text: str, last_tx: dict | None, is_income: bool = False) -> dict
                 "nuova_categoria": data.get("nuovo_testo", "") if campo == "categoria" else "",
                 "nuova_descrizione": data.get("nuovo_testo", "") if campo == "descrizione" else "",
                 "nuova_data": data.get("nuovo_testo", "") if campo == "data" else "",
+                "nuova_nota": data.get("nuovo_testo", "") if campo == "nota" else "",
             },
         }
 
@@ -376,8 +385,10 @@ def _system_prompt_photo(today_iso: str, is_income: bool, caption: str) -> str:
     tipo = "un'ENTRATA o un rimborso ricevuto" if is_income else "una SPESA"
     categorie = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
     didascalia = (
-        f"\nL'utente ha aggiunto questa didascalia alla foto, da usare come "
-        f"contesto: «{caption}»." if caption else ""
+        f"\nL'utente ha aggiunto questa didascalia alla foto: «{caption}». "
+        "Usala come contesto; se contiene una nota/precisazione (es. 'con "
+        "Marco', 'cena di lavoro', spesso introdotta da 'nota:'), mettila "
+        "nel campo nota del pagamento a cui si riferisce." if caption else ""
     )
     return (
         "Sei l'assistente di un bot Telegram personale per registrare "
@@ -405,7 +416,8 @@ def _system_prompt_photo(today_iso: str, is_income: bool, caption: str) -> str:
         "pulita (nome del negozio/esercente se leggibile), l'importo "
         "(sempre positivo), la categoria più adatta, e la data in formato "
         "YYYY-MM-DD se leggibile nell'immagine per quel pagamento, "
-        "altrimenti oggi.\n"
+        "altrimenti oggi, e una nota se c'è una precisazione leggibile "
+        "nell'immagine o nella didascalia (altrimenti stringa vuota).\n"
         "Se l'immagine non è nessuna delle cose sopra, o è troppo poco "
         "chiara per leggere con certezza almeno un importo → azione = "
         "non_pertinente, `spese` vuoto.\n"
@@ -426,9 +438,10 @@ def _response_schema_photo(is_income: bool) -> dict:
                 "type": "string",
                 "description": "YYYY-MM-DD letta dall'immagine. Se non leggibile, oggi.",
             },
+            "nota": {"type": "string", "description": "Nota opzionale, stringa vuota se assente."},
         },
-        "required": ["descrizione", "importo", "categoria", "data"],
-        "propertyOrdering": ["descrizione", "importo", "categoria", "data"],
+        "required": ["descrizione", "importo", "categoria", "data", "nota"],
+        "propertyOrdering": ["descrizione", "importo", "categoria", "data", "nota"],
     }
     return {
         "type": "object",
@@ -497,6 +510,7 @@ def _interpret_photo(image_bytes: bytes, caption: str, is_income: bool = False) 
             "importo": item.get("importo", 0),
             "categoria": categoria,
             "data": _valid_iso_date(item.get("data", "")) or _today_iso(),
+            "nota": item.get("nota", "") or "",
         })
     return {"tool": "registra_spesa", "input": {"spese": spese}}
 
@@ -512,15 +526,20 @@ _HELP = (
     "Scrivi + davanti per registrare un'ENTRATA invece di una spesa:\n"
     "  «+50 stipendio»\n"
     "  «+20 rimborso da Marco»\n\n"
+    "Aggiungi una nota con «nota: ...» nello stesso messaggio:\n"
+    "  «15 regalo per Giulia, nota: compleanno»\n\n"
     "Manda una FOTO di uno scontrino, uno screenshot di una notifica di "
     "pagamento, o anche una lista di più movimenti (es. l'elenco "
     "transazioni dell'app della banca): ti mostro cosa ho letto, uno alla "
     "volta se sono più di uno, e aspetto una conferma prima di salvare "
     "ciascuno (rispondi «sì», «annulla» per saltarlo, «annulla tutto» per "
     "scartare tutti i rimanenti, o scrivi una correzione). Stesso + "
-    "davanti alla didascalia per un'entrata.\n\n"
-    "Correggi l'ultima registrazione scrivendo in chiaro:\n"
-    "  «era 54 non 45» · «mettila in Persona» · «era di ieri»\n\n"
+    "davanti alla didascalia per un'entrata, nota: nella didascalia per "
+    "aggiungere una nota.\n\n"
+    "Correggi l'ultima registrazione (o un pagamento in attesa di conferma) "
+    "scrivendo in chiaro:\n"
+    "  «era 54 non 45» · «mettila in Persona» · «era di ieri» · "
+    "«nota: con Marco»\n\n"
     "Comandi:\n"
     "/oggi — spese di oggi\n"
     "/settimana — ultimi 7 giorni\n"
@@ -604,12 +623,13 @@ def _cmd_ultima(chat_id):
         send_message(chat_id, "Nessuna registrazione recente del bot.")
         return
     etichetta = "Ultima entrata" if tx["amount"] >= 0 else "Ultima spesa"
+    nota_suffix = f" · nota: {tx['note']}" if tx.get("note") else ""
     send_message(
         chat_id,
         f"{etichetta}: {tx['description']} {_fmt_eur(abs(tx['amount']))} · "
-        f"{tx['category']} · {_fmt_date_it(tx['date'])}\n\n"
-        f"Per correggerla scrivi ad es. «era 12 non 8», «mettila in Svago» o "
-        f"«era di ieri». Per cancellarla: /cancella",
+        f"{tx['category']} · {_fmt_date_it(tx['date'])}{nota_suffix}\n\n"
+        f"Per correggerla scrivi ad es. «era 12 non 8», «mettila in Svago», "
+        f"«era di ieri» o «nota: con Marco». Per cancellarla: /cancella",
     )
 
 
@@ -756,17 +776,18 @@ def _retry_pending_row(row: dict) -> bool:
         try:
             new_id = _insert_transaction(
                 candidate["descrizione"], candidate["importo"], candidate["categoria"],
-                candidate["data"], candidate["is_income"],
+                candidate["data"], candidate["is_income"], candidate.get("note", ""),
             )
             db.set_setting(_LAST_TX_KEY, str(new_id))
         except Exception as e:
             print("[telegram] retry conferma foto fallito:", repr(e))
             return False
         verbo = "Registrata entrata" if candidate["is_income"] else "Registrato"
+        nota_suffix = f" · nota: {candidate['note']}" if candidate.get("note") else ""
         send_message(
             row["chat_id"],
             f"{verbo} — {candidate['descrizione']} {_fmt_eur(candidate['importo'])} · "
-            f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}",
+            f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}{nota_suffix}",
         )
         return True
 
@@ -861,8 +882,9 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
         pool = _INCOME_CATEGORIES if is_income else _EXPENSE_CATEGORIES
         category = data["categoria"] if data["categoria"] in pool else pool[0]
         tx_date = _valid_iso_date(data.get("data", "")) or _today_iso()
+        note = (data.get("nota") or "").strip()
         try:
-            new_id = _insert_transaction(desc, amount, category, tx_date, is_income)
+            new_id = _insert_transaction(desc, amount, category, tx_date, is_income, note)
             db.set_setting(_LAST_TX_KEY, str(new_id))
         except Exception as e:
             # A differenza degli errori di Gemini (già gestiti sopra), un
@@ -891,10 +913,11 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
         else:
             month_total = _spent_in_month(tx_date[:7])
             riepilogo = f"Totale {tx_date[:7]}: {_fmt_eur(month_total)}"
+        nota_suffix = f" · nota: {note}" if note else ""
         send_message(
             chat_id,
             f"{verbo} — {desc} {_fmt_eur(amount)} · {category} · "
-            f"{_fmt_date_it(tx_date)}\n{riepilogo}",
+            f"{_fmt_date_it(tx_date)}{nota_suffix}\n{riepilogo}",
         )
         return True
 
@@ -939,6 +962,11 @@ def _handle_text(chat_id, text: str, *, announce_queue: bool = True) -> bool:
                     return True
                 db.update_transaction(last_tx["id"], date=new_date)
                 send_message(chat_id, f"Data aggiornata → {_fmt_date_it(new_date)}")
+            elif campo == "nota":
+                # Nota vuota accettata: è il modo per rimuoverla.
+                new_note = (data.get("nuova_nota") or "").strip()
+                db.update_transaction(last_tx["id"], note=new_note)
+                send_message(chat_id, f"Nota aggiornata → {new_note}" if new_note else "Nota rimossa.")
         except Exception as e:
             # Stesso ragionamento del ramo registra_spesa sopra: un fallimento
             # del DB qui arriva dopo che Gemini ha già interpretato la
@@ -1004,10 +1032,11 @@ def _format_confirmation_prompt(candidate: dict, index: int, total: int) -> str:
     )
     if total > 1:
         footer += " «annulla tutto» scarta anche i pagamenti rimasti."
+    nota_suffix = f" · nota: {candidate['note']}" if candidate.get("note") else ""
     return (
         header
         + f"{candidate['descrizione']} {_fmt_eur(candidate['importo'])} · "
-        f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}\n\n"
+        f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}{nota_suffix}\n\n"
         + footer
     )
 
@@ -1064,6 +1093,7 @@ def _apply_photo_result(chat_id, result: dict, is_income: bool) -> None:
             "importo": abs(float(item["importo"])),
             "categoria": item["categoria"],
             "data": _valid_iso_date(item.get("data", "")) or _today_iso(),
+            "note": (item.get("nota") or "").strip(),
             "is_income": is_income,
         }
         if candidate["importo"] > 0:
@@ -1113,6 +1143,8 @@ def _apply_candidate_correction(candidate: dict, result: dict) -> str | None:
         if not new_date:
             return "Data non valida."
         candidate["data"] = new_date
+    elif campo == "nota":
+        candidate["note"] = (data.get("nuova_nota") or "").strip()
     return None
 
 
@@ -1143,7 +1175,7 @@ def _handle_confirmation_reply(chat_id, text: str, state: dict) -> None:
         try:
             new_id = _insert_transaction(
                 candidate["descrizione"], candidate["importo"], candidate["categoria"],
-                candidate["data"], candidate["is_income"],
+                candidate["data"], candidate["is_income"], candidate.get("note", ""),
             )
             db.set_setting(_LAST_TX_KEY, str(new_id))
         except Exception as e:
@@ -1158,10 +1190,11 @@ def _handle_confirmation_reply(chat_id, text: str, state: dict) -> None:
             _advance_pending_photo_queue(chat_id, state)
             return
         verbo = "Registrata entrata" if candidate["is_income"] else "Registrato"
+        nota_suffix = f" · nota: {candidate['note']}" if candidate.get("note") else ""
         send_message(
             chat_id,
             f"{verbo} — {candidate['descrizione']} {_fmt_eur(candidate['importo'])} · "
-            f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}",
+            f"{candidate['categoria']} · {_fmt_date_it(candidate['data'])}{nota_suffix}",
         )
         _advance_pending_photo_queue(chat_id, state)
         return
@@ -1180,6 +1213,7 @@ def _handle_confirmation_reply(chat_id, text: str, state: dict) -> None:
         "description": candidate["descrizione"],
         "category": candidate["categoria"],
         "date": candidate["data"],
+        "note": candidate.get("note", ""),
     }
     result = _interpret(text, fake_last_tx, is_income=candidate["is_income"])
     tool = result.get("tool")

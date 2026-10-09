@@ -170,3 +170,29 @@ per una foto con un solo pagamento è identico a prima, nessun contatore):
   foto con un solo pagamento → formato messaggio invariato; DB che fallisce
   su uno dei N → coda, si continua con gli altri) + ri-verificati i 9+2
   scenari precedenti, tutti OK.
+
+**Revisione (2026-10-09) — nota opzionale.** Aggiunta la possibilità di
+scrivere una nota, sia per il testo libero che per le foto, scritta nello
+stesso messaggio/didascalia (non un passaggio separato):
+
+- Campo `nota` aggiunto a `_response_schema`/`_system_prompt` (testo) e
+  `_response_schema_photo`/`_system_prompt_photo` (foto, per ciascun
+  pagamento): Gemini la riconosce quando introdotta da «nota:» o da un
+  "con X"/"per Y" dopo una virgola, altrimenti resta vuota.
+- `campo_correzione` esteso con `"nota"` in entrambi gli schemi: si può
+  aggiungere/cambiare/rimuovere la nota anche dopo, con «nota: ...»
+  (nota vuota = rimossa), sia su `last_tx` (testo) sia sul candidato in
+  attesa di conferma (foto) — stessa infrastruttura di correzione già
+  esistente, nessun codice nuovo per il dispatch.
+- `_insert_transaction` accetta ora `note` (default `""`, come il resto del
+  bot prima di questa modifica) e lo scrive nella colonna `note` già
+  esistente nella tabella `transactions` (stessa colonna usata dall'app
+  desktop).
+- La nota, quando presente, compare nei messaggi di conferma/registrazione
+  e in `/ultima` (` · nota: ...`); nessun cambiamento quando è vuota.
+- Verificato con 6 scenari di logica mockati (testo: registrazione con nota
+  inline, registrazione senza nota, correzione che aggiunge una nota a una
+  transazione già salvata, rimozione nota; foto: nota dalla didascalia
+  mostrata nel prompt di conferma e nel messaggio finale, correzione della
+  nota sul candidato in attesa) + ri-verificata la regressione completa
+  (foto singola, multi-pagamento, testo semplice, `/aiuto`), tutti OK.

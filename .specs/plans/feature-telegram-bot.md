@@ -110,5 +110,13 @@ categoria "Bar & Ristoranti" in Turso, visibile subito nell'app desktop.
     monkeypatchata (round-trip entrata/spesa/data/correzione, coda:
     fallimento→attempts++, successo→rimossa, max tentativi→scartata e
     utente avvisato). Non verificato dal vivo contro Gemini reale.
-[ ] Deploy + verifica end-to-end di issue-telegram-2 da telefono
-[ ] Merge issue-telegram-2 in `dev`
+[x] Deploy + verifica end-to-end di issue-telegram-2 da telefono
+[x] Merge issue-telegram-2 in `dev`
+[x] issue-telegram-3: webhook risponde subito (200 immediato, elaborazione
+    in background), dedup su `update_id` — vedi commit dedicato, deployato
+    e verificato dal vivo.
+[x] issue-telegram-4: spese da foto (scontrino, notifica di pagamento,
+    più pagamenti in una stessa immagine), conferma esplicita prima di
+    salvare, nota opzionale per testo e foto. Deployato e verificato dal
+    vivo con foto reale. Dettagli completi in
+    `.specs/plans/feature-telegram-spese-da-foto.md`.

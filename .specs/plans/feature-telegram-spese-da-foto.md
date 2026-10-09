@@ -133,11 +133,25 @@ Decisioni prese con l'utente:
 [x] `ast.parse` + import del modulo contro il backend locale (Turso reale):
     nessun errore; migrazione pigra di `telegram_pending` verificata
     (colonne `kind`/`payload_json` presenti dopo lo startup).
-[ ] Deploy su Fly.io e verifica end-to-end dal telefono (foto reale di uno
-    scontrino e screenshot di una notifica di pagamento, contro Gemini
-    vision reale) — non verificabile da qui per mancanza di
-    `GEMINI_API_KEY`/`TELEGRAM_BOT_TOKEN` in locale.
-[ ] Merge `issue-telegram-4` in `dev`, poi in `main`.
+[x] Deploy su Fly.io e verifica end-to-end dal telefono: **fatto e
+    funzionante** (2026-10-09), dopo aver risolto in produzione:
+    - `PYTHONUNBUFFERED` mancante nel `Dockerfile` — i `print()` di
+      `telegram_bot.py` (incluso il logging appena aggiunto) non arrivavano
+      mai a `fly logs` perché lo stdout dentro il container è bufferizzato
+      a blocchi, non a riga. Vedi commit dedicato.
+    - `TELEGRAM_PARSER_MODEL=gemini-3.6-flash-lite` (secret Fly) non era un
+      nome di modello valido (404) — ipotesi sbagliata basata su un pattern
+      generale non verificato abbastanza. Confermato poi dall'utente
+      direttamente nel menu modelli di AI Studio: `gemini-3.1-flash-lite` e
+      `gemini-3.5-flash-lite` esistono entrambi con lo stesso limite più
+      alto (15 RPM / 500 RPD contro 5 RPM / 20 RPD di `gemini-3.6-flash`).
+      Impostato `gemini-3.5-flash-lite` (confermato con fonti ufficiali
+      ai.google.dev prima di applicarlo) — quota separata da quella già
+      esaurita di `gemini-3.6-flash` durante i test di oggi, funziona subito.
+    - Foto reale di scontrino testata dal telefono: confermato funzionante
+      end-to-end (lettura, conferma, correzione categoria, inserimento).
+[x] Merge `issue-telegram-4` in `main` (fast-forward, nessun conflitto) e
+    `dev` riallineato a `main`.
 
 **Revisione (2026-10-09) — più pagamenti in una foto.** L'utente ha fatto
 notare un caso non coperto: uno screenshot con più pagamenti distinti nello

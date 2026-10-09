@@ -9,7 +9,7 @@ Sviluppata con l'assistenza di [Claude Code](https://claude.com/claude-code) per
 - **Import automatico Revolut** — carica l'estratto conto e le transazioni vengono categorizzate automaticamente
 - **Pianificazione budget** — budget totale e per categoria, spese ricorrenti pianificate, modificabili mese per mese
 - **Stipendi e turni** — registrazione ore lavorate e stipendi netti/lordi, con **previsione dello stipendio futuro**: una media pesata della tariffa oraria sui mesi passati (più peso ai mesi recenti) applicata alle ore già registrate
-- **Bot Telegram** — registra una spesa scrivendo un messaggio in linguaggio naturale, interpretato da Gemini
+- **Bot Telegram** — registra una spesa scrivendo un messaggio in linguaggio naturale o mandando una foto (scontrino, notifica di pagamento, anche con più pagamenti distinti nella stessa immagine), interpretato da Gemini
 - **Integrazione Splitwise** — amici, gruppi e spese condivise recuperati direttamente in app tramite le API di Splitwise
 - **Rimborsi e risparmi** — tracciamento separato di rimborsi attesi e obiettivi di risparmio
 

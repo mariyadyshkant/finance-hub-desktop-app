@@ -41,7 +41,7 @@ Il database usa **Turso** (libSQL) invece di Postgres perché il progetto nasce 
 **Backend:** Python, FastAPI, Uvicorn
 **Database:** Turso (libSQL / SQLite)
 **Deploy backend hosted:** Docker, Fly.io
-**CI/CD:** GitHub Actions — build firmate per macOS, supporto Linux
+**CI/CD:** GitHub Actions — build per macOS, Windows e Linux
 
 ## Sviluppo locale
 
@@ -74,7 +74,7 @@ Variabili d'ambiente necessarie (vedi `backend/.env.example`):
 npm run build
 ```
 
-Le release per macOS e Linux sono automatizzate tramite GitHub Actions (`.github/workflows/release.yml`), con build firmate. L'app è stata testata da compagni di corso su macchine reali prima del rilascio, individuando e correggendo diversi problemi di packaging.
+Le release per macOS, Windows e Linux sono automatizzate tramite GitHub Actions (`.github/workflows/release.yml`). Le build macOS non sono firmate: al primo avvio macOS mostra un avviso (clic destro → Apri). L'app è stata testata da compagni di corso su macchine reali prima del rilascio, individuando e correggendo diversi problemi di packaging.
 
 ## Nota sulla demo
 
